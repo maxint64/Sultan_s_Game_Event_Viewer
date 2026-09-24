@@ -11,8 +11,12 @@ import tkinter as tk
 from tkinter import ttk, messagebox, scrolledtext, filedialog
 import glob
 import re
+import copy
 
 class EventViewer:
+    CHARACTER_DEFAULT_SELECTION = "所有人"
+    EVENT_DEFAULT_SELECTION = "请输入或选择"
+
     def __init__(self, root):
         self.root = root
         self.root.title("事件分支查看器")
@@ -29,6 +33,12 @@ class EventViewer:
         self.current_settlement = None
         self.comments_data = {}  # 存储注释信息
         self.all_event_names = []  # 存储所有事件名称
+        self.available_event_names = []  # 当前人物筛选后的事件名称
+        self.event_name_to_file = {}
+        self.event_card_ids = {}
+        self.default_characters = self.load_default_characters()
+        self.characters = copy.deepcopy(self.default_characters)
+        self.character_display_map = {}
         
         # 设置暗黑主题
         self.set_dark_theme()
@@ -115,7 +125,7 @@ class EventViewer:
         
         # 文件夹选择
         ttk.Label(control_frame, text="文件夹:", font=self.font).pack(side=tk.LEFT, padx=(0, 5))
-        self.folder_path = tk.StringVar(value="如果官方有更新，选择你的游戏文件夹，Sultan's Game\Sultan's Game_Data\StreamingAssets\config\rite")
+        self.folder_path = tk.StringVar(value=r"如果官方有更新，选择你的游戏文件夹，Sultan's Game\Sultan's Game_Data\StreamingAssets\config\rite")
         folder_entry = ttk.Entry(control_frame, textvariable=self.folder_path)
         folder_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
         
@@ -132,18 +142,29 @@ class EventViewer:
         player_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
         self.player_name.trace_add("write", self.on_player_name_change)
         
-        # 事件选择框架 - 单个组合框
+        # 人物和事件选择框架
         event_select_frame = ttk.Frame(main_frame)
         event_select_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # 事件选择 - 搜索+下拉一体化
-        ttk.Label(event_select_frame, text="事件:", font=self.font).pack(side=tk.LEFT, padx=(0, 5))
-        
-        # 使用Combobox的搜索功能
-        self.event_combo = ttk.Combobox(event_select_frame, font=self.font, width=80)
-        self.event_combo.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        event_select_frame.grid_columnconfigure(1, weight=1, uniform="search")
+        event_select_frame.grid_columnconfigure(3, weight=1, uniform="search")
+
+        ttk.Label(event_select_frame, text="角色:", font=self.font).grid(row=0, column=0, padx=(0, 5), sticky="w")
+        self.character_combo = ttk.Combobox(event_select_frame, font=self.font)
+        self.character_combo.grid(row=0, column=1, sticky="ew")
+        self.character_combo.bind("<KeyRelease>", self.filter_characters)
+        self.character_combo.bind("<<ComboboxSelected>>", self.on_character_selected)
+        self.character_combo.bind("<Return>", self.on_character_selected)
+        self.character_combo.bind("<FocusIn>", lambda event: self.clear_placeholder(self.character_combo))
+        self.character_combo.bind("<FocusOut>", lambda event: self.restore_placeholder(self.character_combo))
+
+        ttk.Label(event_select_frame, text="事件:", font=self.font).grid(row=0, column=2, padx=(15, 5), sticky="w")
+        self.event_combo = ttk.Combobox(event_select_frame, font=self.font)
+        self.event_combo.grid(row=0, column=3, sticky="ew")
         self.event_combo.bind("<KeyRelease>", self.filter_events)
         self.event_combo.bind("<<ComboboxSelected>>", self.on_event_selected)
+        self.event_combo.bind("<Return>", self.on_event_selected)
+        self.event_combo.bind("<FocusIn>", lambda event: self.clear_placeholder(self.event_combo))
+        self.event_combo.bind("<FocusOut>", lambda event: self.restore_placeholder(self.event_combo))
         
         # 创建事件描述区域 - 去掉边框
         description_frame = ttk.Frame(main_frame)
@@ -155,7 +176,7 @@ class EventViewer:
         self.event_desc_text = scrolledtext.ScrolledText(description_frame, wrap=tk.WORD, font=self.font, height=3)
         self.event_desc_text.pack(fill=tk.X, expand=True)
         # 设置文本颜色
-        self.event_desc_text.config(bg=colors["bg"], fg=colors["fg"], insertbackground=colors["fg"])
+        self.event_desc_text.config(bg=colors["bg"], fg=colors["fg"], insertbackground=colors["fg"], state=tk.DISABLED)
         
         # 创建中间区域 - 分为左右两列
         middle_frame = ttk.Frame(main_frame)
@@ -220,12 +241,199 @@ class EventViewer:
         self.result_text = scrolledtext.ScrolledText(result_frame, wrap=tk.WORD, font=self.font)
         self.result_text.pack(fill=tk.BOTH, expand=True)
         # 设置文本颜色
-        self.result_text.config(bg=colors["bg"], fg=colors["fg"], insertbackground=colors["fg"])
+        self.result_text.config(bg=colors["bg"], fg=colors["fg"], insertbackground=colors["fg"], state=tk.DISABLED)
         # 配置标签样式
         self.result_text.tag_configure("title", font=("Microsoft YaHei UI", 12, "bold"))
         self.result_text.tag_configure("content", font=("Microsoft YaHei UI", 10))
         self.result_text.tag_configure("comment", font=("Microsoft YaHei UI", 10, "italic"), foreground="#6a9955")
         
+    def load_default_characters(self):
+        """加载随程序提供的人工校正人物元数据。"""
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        metadata_path = os.path.join(current_dir, "character", "characters.json")
+        try:
+            with open(metadata_path, "r", encoding="utf-8") as file:
+                data = json.load(file)
+            return data if isinstance(data, list) else []
+        except Exception as error:
+            print(f"加载人物元数据失败: {metadata_path}, 错误: {error}")
+            return []
+
+    def strip_json_comments(self, content):
+        """移除字符串外的 // 注释，并清理尾随逗号。"""
+        result = []
+        index = 0
+        in_string = False
+        escaped = False
+        while index < len(content):
+            char = content[index]
+            if in_string:
+                result.append(char)
+                if escaped:
+                    escaped = False
+                elif char == "\\":
+                    escaped = True
+                elif char == '"':
+                    in_string = False
+                index += 1
+            elif char == '"':
+                in_string = True
+                result.append(char)
+                index += 1
+            elif char == "/" and index + 1 < len(content) and content[index + 1] == "/":
+                index += 2
+                while index < len(content) and content[index] not in "\r\n":
+                    index += 1
+            else:
+                result.append(char)
+                index += 1
+        return re.sub(r",\s*([}\]])", r"\1", "".join(result))
+
+    def update_characters_from_cards(self, rite_folder):
+        """用 rite 同级的 cards.json 更新运行时人物列表，不写入硬盘。"""
+        self.characters = copy.deepcopy(self.default_characters)
+        cards_path = os.path.join(os.path.dirname(os.path.normpath(rite_folder)), "cards.json")
+        if not os.path.isfile(cards_path):
+            return
+
+        try:
+            with open(cards_path, "r", encoding="utf-8") as file:
+                cards_data = json.loads(self.strip_json_comments(file.read()))
+        except Exception as error:
+            print(f"加载卡牌数据失败: {cards_path}, 错误: {error}")
+            return
+
+        valid_cards = {}
+        for key, card in cards_data.items():
+            if not isinstance(card, dict) or card.get("type") != "char":
+                continue
+            title = card.get("title", "")
+            tags = card.get("tag", {})
+            if title in {"未启用", "食客", "路人"} or "食客" in tags:
+                continue
+            try:
+                card_id = int(card.get("id", key))
+            except (TypeError, ValueError):
+                continue
+            valid_cards[card_id] = card
+
+        records = copy.deepcopy(self.default_characters)
+        for record in records:
+            record["card_ids"] = [card_id for card_id in record.get("card_ids", []) if card_id in valid_cards]
+
+        id_to_record = {}
+        name_to_record = {}
+        for record in records:
+            for card_id in record.get("card_ids", []):
+                id_to_record[card_id] = record
+            for name in [record.get("name", ""), *record.get("aliases", [])]:
+                if name:
+                    name_to_record.setdefault(name, record)
+
+        for card_id, card in valid_cards.items():
+            name = card.get("name", "").strip()
+            if not name:
+                continue
+            if card_id in id_to_record:
+                record = id_to_record[card_id]
+                if name != record.get("name") and name not in record.get("aliases", []):
+                    record.setdefault("aliases", []).append(name)
+                    name_to_record.setdefault(name, record)
+                continue
+            record = name_to_record.get(name)
+            if record is None:
+                record = {"name": name, "aliases": [], "card_ids": []}
+                records.append(record)
+                name_to_record[name] = record
+            record["card_ids"].append(card_id)
+            id_to_record[card_id] = record
+
+        self.characters = [record for record in records if record.get("card_ids")]
+        for record in self.characters:
+            record["card_ids"] = sorted(set(record["card_ids"]))
+        self.characters.sort(key=lambda record: min(record["card_ids"]))
+
+    def format_character_option(self, character):
+        aliases = "/".join(character.get("aliases", []))
+        card_ids = ", ".join(str(card_id) for card_id in character.get("card_ids", []))
+        name = character.get("name", "")
+        name_with_aliases = f"{name} ({aliases})" if aliases else name
+        return f"{name_with_aliases} - {card_ids}"
+
+    def refresh_character_options(self):
+        self.character_display_map = {
+            self.format_character_option(character): character
+            for character in self.characters
+        }
+        options = [self.CHARACTER_DEFAULT_SELECTION, *self.character_display_map.keys()]
+        self.character_combo["values"] = options
+        self.character_combo.set(self.CHARACTER_DEFAULT_SELECTION)
+
+    def clear_placeholder(self, combo):
+        placeholder = self.CHARACTER_DEFAULT_SELECTION if combo is self.character_combo else self.EVENT_DEFAULT_SELECTION
+        if combo.get() == placeholder:
+            combo.set("")
+
+    def restore_placeholder(self, combo):
+        if not combo.get().strip():
+            if combo is self.character_combo:
+                combo.set(self.CHARACTER_DEFAULT_SELECTION)
+                self.on_character_selected()
+            elif combo is self.event_combo:
+                combo.set(self.EVENT_DEFAULT_SELECTION)
+                self.on_event_selected(None)
+
+    def set_text_content(self, widget, content="", tag=None):
+        widget.config(state=tk.NORMAL)
+        widget.delete(1.0, tk.END)
+        if content:
+            widget.insert(tk.END, content, tag) if tag else widget.insert(tk.END, content)
+        widget.config(state=tk.DISABLED)
+
+    def clear_event_display(self):
+        self.current_event = None
+        self.current_settlement = None
+        self.set_text_content(self.event_desc_text)
+        self.set_text_content(self.result_text)
+        self.result_title_var.set("")
+        for tree in (self.slot_tree, self.settlement_tree):
+            for item in tree.get_children():
+                tree.delete(item)
+
+    def filter_characters(self, event=None):
+        if event and event.keysym in ("Down", "Up", "Return", "Tab"):
+            return
+        search_text = self.character_combo.get().strip().lower()
+        if search_text == self.CHARACTER_DEFAULT_SELECTION.lower():
+            search_text = ""
+        if hasattr(self, "_character_filter_job"):
+            self.root.after_cancel(self._character_filter_job)
+        self._character_filter_job = self.root.after(500, lambda: self._do_filter_characters(search_text))
+
+    def _do_filter_characters(self, search_text):
+        matches = [
+            option for option in self.character_display_map
+            if not search_text or search_text in option.lower()
+        ]
+        self.character_combo["values"] = [self.CHARACTER_DEFAULT_SELECTION, *matches]
+        if search_text and matches:
+            self.character_combo.event_generate("<Down>")
+
+    def on_character_selected(self, event=None):
+        selected = self.character_combo.get().strip()
+        character = self.character_display_map.get(selected)
+        if character is None:
+            self.available_event_names = self.all_event_names.copy()
+        else:
+            card_ids = set(character.get("card_ids", []))
+            self.available_event_names = [
+                event_name for event_name in self.all_event_names
+                if self.event_card_ids.get(self.event_name_to_file[event_name], set()) & card_ids
+            ]
+        self.event_combo["values"] = [self.EVENT_DEFAULT_SELECTION, *self.available_event_names]
+        self.event_combo.set(self.EVENT_DEFAULT_SELECTION)
+        self.clear_event_display()
+
     def browse_folder(self):
         folder = tk.filedialog.askdirectory()
         if folder:
@@ -233,38 +441,25 @@ class EventViewer:
             self.load_event_files()
     
     def filter_events(self, event=None):
-        """根据输入过滤事件列表"""
-        if not hasattr(self, 'all_event_names') or not self.all_event_names:
-            # 首次调用时确保有完整的事件列表
+        """根据输入过滤当前人物范围内的事件列表。"""
+        if event and event.keysym in ("Down", "Up", "Return", "Tab"):
             return
-        
-        # 获取当前输入的文本
-        search_text = self.event_combo.get().lower()
-        
-        # 避免在事件处理中弹出下拉菜单导致输入中断
-        if event and event.keysym in ('Down', 'Up', 'Return', 'Tab'):
-            return
-        
-        # 延迟执行筛选，避免在输入过程中频繁触发
-        if hasattr(self, '_filter_job'):
+        search_text = self.event_combo.get().strip().lower()
+        if search_text == self.EVENT_DEFAULT_SELECTION.lower():
+            search_text = ""
+        if hasattr(self, "_filter_job"):
             self.root.after_cancel(self._filter_job)
-        
         self._filter_job = self.root.after(500, lambda: self._do_filter(search_text))
-    
+
     def _do_filter(self, search_text):
-        """实际执行筛选操作"""
-        # 如果搜索框为空，显示所有事件
-        if not search_text:
-            self.event_combo["values"] = self.all_event_names
-        else:
-            # 筛选包含搜索文本的事件
-            filtered_events = [name for name in self.all_event_names if search_text in name.lower()]
-            self.event_combo["values"] = filtered_events
-            
-            # 保持下拉列表打开
-            if filtered_events:
-                self.event_combo.event_generate('<Down>')
-    
+        filtered_events = [
+            name for name in self.available_event_names
+            if not search_text or search_text in name.lower()
+        ]
+        self.event_combo["values"] = [self.EVENT_DEFAULT_SELECTION, *filtered_events]
+        if search_text and filtered_events:
+            self.event_combo.event_generate("<Down>")
+
     def extract_comments(self, content):
         """从JSON内容中提取注释"""
         comments = {}
@@ -353,6 +548,10 @@ class EventViewer:
         self.event_files = []
         self.event_data = {}
         self.comments_data = {}
+        self.event_card_ids = {}
+        self.event_name_to_file = {}
+        self.update_characters_from_cards(folder)
+        self.clear_event_display()
         
         try:
             # 查找所有json文件
@@ -383,6 +582,10 @@ class EventViewer:
                             if 'id' in data and 'name' in data and 'settlement' in data:
                                 self.event_files.append(file_path)
                                 self.event_data[file_path] = data
+                                self.event_card_ids[file_path] = {
+                                    int(card_id)
+                                    for card_id in re.findall(r"(?<!\d)2\d{6}(?!\d)", content_no_comments)
+                                }
                         except json.JSONDecodeError as je:
                             print(f"JSON解析错误: {file_path}, 错误: {je}")
                             
@@ -398,12 +601,18 @@ class EventViewer:
             # 按ID排序事件列表
             event_names.sort(key=lambda x: int(x.split(' - ')[0]) if x.split(' - ')[0].isdigit() else float('inf'))
             
-            self.event_combo["values"] = event_names
-            # 保存所有事件名称以便筛选
+            # 保存所有事件名称和对应文件，以便人物联动与筛选
             self.all_event_names = event_names.copy()
+            self.available_event_names = event_names.copy()
+            self.event_name_to_file = {
+                f"{self.event_data[file_path]['id']} - {self.event_data[file_path]['name']}": file_path
+                for file_path in self.event_files
+            }
+            self.refresh_character_options()
+            self.event_combo["values"] = [self.EVENT_DEFAULT_SELECTION, *event_names]
+            self.event_combo.set(self.EVENT_DEFAULT_SELECTION)
             
             if event_names:
-                self.event_combo.set("")  # 初始化为空，允许用户输入搜索
                 messagebox.showinfo("提示", f"成功加载了 {len(self.event_files)} 个事件文件")
             else:
                 messagebox.showinfo("提示", "没有找到有效的事件文件")
@@ -413,25 +622,21 @@ class EventViewer:
     
     def on_event_selected(self, event):
         """当从下拉列表选择事件时调用"""
-        selected_event = self.event_combo.get()
-        if not selected_event:
+        selected_event = self.event_combo.get().strip()
+        if not selected_event or selected_event == self.EVENT_DEFAULT_SELECTION:
+            self.clear_event_display()
             return
-            
-        # 查找对应的事件文件
-        for file_path in self.event_files:
-            event_data = self.event_data[file_path]
-            event_name = f"{event_data['id']} - {event_data['name']}"
-            if event_name == selected_event:
-                self.current_event = file_path
-                
-                # 更新事件描述文本
-                self.event_desc_text.delete(1.0, tk.END)
-                if 'text' in event_data:
-                    self.event_desc_text.insert(tk.END, event_data['text'])
-                
-                # 更新条件列表
-                self.update_condition_lists()
-                break
+
+        file_path = self.event_name_to_file.get(selected_event)
+        if file_path is None:
+            return
+        event_data = self.event_data[file_path]
+        self.current_event = file_path
+        self.current_settlement = None
+        self.set_text_content(self.event_desc_text, event_data.get("text", ""))
+        self.set_text_content(self.result_text)
+        self.result_title_var.set("")
+        self.update_condition_lists()
     
     def update_condition_lists(self):
         """更新条件列表"""
@@ -520,6 +725,7 @@ class EventViewer:
         
     def display_result_text(self, settlement):
         """显示结果文本，替换玩家名称并添加注释"""
+        self.result_text.config(state=tk.NORMAL)
         # 保存当前settlement以便名称变更时更新
         self.current_settlement = settlement
         
@@ -605,6 +811,7 @@ class EventViewer:
                     self.result_text.insert(tk.END, f"  // {comment}\n", "comment")
                 else:
                     self.result_text.insert(tk.END, f"  {key}: {str_value}\n", "content")
+        self.result_text.config(state=tk.DISABLED)
     
     def on_slot_selected(self, event):
         """当选择Slot条件时显示相关信息"""
@@ -624,6 +831,7 @@ class EventViewer:
         if "cards_slot" in event_data and slot_key in event_data["cards_slot"]:
             slot_info = event_data["cards_slot"][slot_key]
             self.result_title_var.set(f"Slot {slot_key}信息")
+            self.result_text.config(state=tk.NORMAL)
             
             self.result_text.delete(1.0, tk.END)
             self.result_text.insert(tk.END, "插槽条件用于定义卡牌放置的规则。\n\n")
@@ -661,6 +869,7 @@ class EventViewer:
                             self.result_text.insert(tk.END, f"  // {comment}\n", "comment")
                         else:
                             self.result_text.insert(tk.END, f"{k}: {v}\n", "content")
+            self.result_text.config(state=tk.DISABLED)
                             
     def format_pops_list(self, pops_list, comments):
         """格式化pops列表，使其更有结构且仅显示关键信息"""
@@ -827,6 +1036,7 @@ class EventViewer:
         
 
         self.result_title_var.set("结果文本")
+        self.result_text.config(state=tk.NORMAL)
         
         # 清空结果区
         self.result_text.delete(1.0, tk.END)
@@ -890,10 +1100,12 @@ class EventViewer:
             # 添加分隔线
             if target_group.index((item_type, item_index, item)) < len(target_group) - 1:
                 self.result_text.insert(tk.END, "—" * 50 + "\n\n", "comment")
+        self.result_text.config(state=tk.DISABLED)
             
     def display_random_text(self, random_text, key):
         """显示随机文本信息"""
         self.result_title_var.set(f"随机文本 {key}")
+        self.result_text.config(state=tk.NORMAL)
         
         self.result_text.delete(1.0, tk.END)
         
@@ -913,6 +1125,7 @@ class EventViewer:
                     # 检查是否有low_target等特殊属性
                     if k == "low_target" or k == "type" or k == "type_tips":
                         self.result_text.insert(tk.END, "\n", "content")
+        self.result_text.config(state=tk.DISABLED)
 
 if __name__ == "__main__":
     try:
