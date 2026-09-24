@@ -2,7 +2,7 @@
 /build/
 code/build/
 releases/backup/
-/苏丹的游戏事件查看器(GitHub：AC-HUB-AC).exe
+*.exe
 
 # Python 字节码缓存
 __pycache__/
