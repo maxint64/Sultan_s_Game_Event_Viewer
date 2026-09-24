@@ -15,6 +15,25 @@
 - 可设置玩家名称，用于替换事件文本中的 `[player.name]`；替换后的名字会突出显示。
 - 提供加载状态、空状态与错误提示，并自动跟随 Windows 明暗主题。
 
+## 项目结构
+
+```text
+Sultan_s_Game_Event_Viewer/
+├── event_viewer.py                    # 主程序
+├── sultan.ico                         # Windows exe 图标
+├── data/
+│   ├── character/characters.json      # 角色名称、别称和 ID 数据
+│   └── rite/*.json                    # 内置事件数据
+├── conf/
+│   ├── event_viewer.spec              # PyInstaller 构建配置
+│   └── event_viewer_version.txt       # Windows exe 版本资源
+├── .build/                            # 构建缓存，自动生成且不提交
+└── releases/backup/                   # 旧 exe 备份，按需生成且不提交
+```
+
+直接运行源码时，`event_viewer.py` 会从同级的 `data/character/` 和
+`data/rite/` 读取内置数据，因此不要只复制主程序文件单独运行。
+
 ## 使用方法
 
 ### 下载并运行 exe
@@ -55,12 +74,17 @@ Steam 中可通过“管理 → 浏览本地文件”找到游戏目录。选择
 
 项目只依赖 Python 标准库中的 Tkinter。建议在 Windows PowerShell 中使用 [uv](https://docs.astral.sh/uv/)：
 
+如果尚未安装 uv，可在 Windows PowerShell 中执行 `winget install --id=astral-sh.uv -e`。
+安装完成后重新打开终端，并运行 `uv --version` 确认命令可用；其他安装方式参见 [uv 官方安装文档](https://docs.astral.sh/uv/getting-started/installation/)。
+
 ```powershell
 cd C:\path\to\Sultan_s_Game_Event_Viewer
 uv run --python 3.11 python ".\event_viewer.py"
 ```
 
 如果系统没有 Tkinter，请安装包含 Tcl/Tk 的完整 Python 3.11。
+
+该命令需要在项目根目录执行。主程序和 `data/` 必须保持上面所示的相对位置。
 
 ## 构建 Windows exe
 
@@ -71,6 +95,8 @@ uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfir
 ```
 
 构建完成后，exe 会输出到项目根目录；中间文件位于 `.build/`。
+构建配置读取 `conf/event_viewer_version.txt` 作为 Windows 版本资源，并读取
+项目根目录的 `sultan.ico` 作为 exe 图标。`.build/` 可以随时删除，下次构建会自动重新生成。
 
 如果项目根目录已经存在同名 exe，构建脚本会先将旧文件复制到
 `releases/backup/`，并在文件名末尾添加构建时间，例如：
