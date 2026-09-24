@@ -17,9 +17,10 @@
 
 ## 使用方法
 
-### 直接运行 exe
+### 下载并运行 exe
 
-下载项目根目录中的 `苏丹的游戏事件查看器(GitHub：AC-HUB-AC).exe`，双击运行。
+前往 [GitHub Releases](https://github.com/AC-HUB-AC/Sultan_s_Game_Event_Viewer/releases)，
+从最新版本的 Assets 中下载 `苏丹的游戏事件查看器(GitHub：AC-HUB-AC).exe`，然后双击运行。
 
 程序启动后会自动加载内置数据：
 
@@ -80,6 +81,9 @@ uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfir
 
 备份成功后才会继续生成新版 exe；同一毫秒内重复构建时还会自动添加数字后缀，
 不会覆盖已有备份。
+
+构建产物不会提交到 Git 仓库。确认程序运行正常后，应创建对应版本的 Git 标签和
+GitHub Release，并将新 exe 作为 Release Asset 上传。
 
 ## 常见问题
 
