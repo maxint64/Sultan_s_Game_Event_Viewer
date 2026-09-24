@@ -4,7 +4,7 @@ import shutil
 from datetime import datetime
 
 # 输出目录由构建命令的 --distpath 和 --workpath 显式指定
-APP_NAME = '苏丹的游戏事件查看器(GitHub：AC-HUB-AC)'
+APP_NAME = '苏丹的游戏事件分支查看器'
 PROJECT_DIR = os.path.abspath(os.path.join(SPECPATH, '..'))
 BACKUP_DIR = os.path.join(PROJECT_DIR, 'releases', 'backup')
 

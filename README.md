@@ -2,7 +2,7 @@
 
 一个使用 Python Tkinter 编写的本地事件数据查看工具，用于检索和阅读《苏丹的游戏》的事件说明、触发条件、结算条件与原始脚本。
 
-《苏丹的游戏》结局查看器见：[Sultan_s_Game_Ending_Viewer](https://github.com/AC-HUB-AC/Sultan_s_Game_Ending_Viewer)。
+※ 本项目基于 [AC-HUB-AC/Sultan_s_Game_Event_Viewer](https://github.com/AC-HUB-AC/Sultan_s_Game_Event_Viewer) 继续开发。感谢原仓库作者及贡献者完成最初版本并开放源代码；后续修改与发布由本仓库维护者负责。若改动具有通用价值，也可能在整理后向上游仓库提交贡献。
 
 ## 主要功能
 
@@ -38,8 +38,8 @@ Sultan_s_Game_Event_Viewer/
 
 ### 下载并运行 exe
 
-前往 [GitHub Releases](https://github.com/AC-HUB-AC/Sultan_s_Game_Event_Viewer/releases)，
-从最新版本的 Assets 中下载 `苏丹的游戏事件查看器(GitHub：AC-HUB-AC).exe`，然后双击运行。
+前往本仓库的 [GitHub Releases](../../releases)，
+从最新版本的 Assets 中下载 `苏丹的游戏事件分支查看器.exe`，然后双击运行。
 
 程序启动后会自动加载内置数据：
 
@@ -102,7 +102,7 @@ uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfir
 `releases/backup/`，并在文件名末尾添加构建时间，例如：
 
 ```text
-苏丹的游戏事件查看器(GitHub：AC-HUB-AC)_20260925-120000-123.exe
+苏丹的游戏事件分支查看器_20260925-120000-123.exe
 ```
 
 备份成功后才会继续生成新版 exe；同一毫秒内重复构建时还会自动添加数字后缀，
