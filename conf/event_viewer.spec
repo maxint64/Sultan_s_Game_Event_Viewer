@@ -3,15 +3,10 @@ import os
 import shutil
 from datetime import datetime
 
-import PyInstaller.config
-
-# 输出 exe 到 spec 文件所在目录的上级（即主文件夹），build 缓存留在 code/ 下
+# 输出目录由构建命令的 --distpath 和 --workpath 显式指定
 APP_NAME = '苏丹的游戏事件查看器(GitHub：AC-HUB-AC)'
 PROJECT_DIR = os.path.abspath(os.path.join(SPECPATH, '..'))
 BACKUP_DIR = os.path.join(PROJECT_DIR, 'releases', 'backup')
-PyInstaller.config.CONF['distpath'] = PROJECT_DIR
-PyInstaller.config.CONF['workpath'] = os.path.join(SPECPATH, 'build')
-os.makedirs(PyInstaller.config.CONF['workpath'], exist_ok=True)
 
 
 def backup_existing_executable():
@@ -37,12 +32,12 @@ def backup_existing_executable():
 backup_existing_executable()
 
 a = Analysis(
-    [os.path.join(SPECPATH, '苏丹的游戏事件查看器.py')],
-    pathex=[SPECPATH],
+    [os.path.join(PROJECT_DIR, 'event_viewer.py')],
+    pathex=[PROJECT_DIR],
     binaries=[],
     datas=[
-        (os.path.join(SPECPATH, 'rite'), 'rite'),
-        (os.path.join(SPECPATH, 'character'), 'character'),
+        (os.path.join(PROJECT_DIR, 'data', 'rite'), 'data/rite'),
+        (os.path.join(PROJECT_DIR, 'data', 'character'), 'data/character'),
     ],
     hiddenimports=[],
     hookspath=[],
@@ -73,6 +68,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    version=os.path.join(SPECPATH, 'version.txt'),
-    icon=[os.path.join(SPECPATH, '图标.ico')],
+    version=os.path.join(SPECPATH, 'event_viewer_version.txt'),
+    icon=[os.path.join(PROJECT_DIR, 'sultan.ico')],
 )

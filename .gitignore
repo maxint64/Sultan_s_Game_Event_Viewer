@@ -1,6 +1,6 @@
 # PyInstaller 中间文件和本地历史构建
 /build/
-code/build/
+/.build/
 releases/backup/
 *.exe
 

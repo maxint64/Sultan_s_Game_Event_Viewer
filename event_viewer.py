@@ -573,7 +573,9 @@ class EventViewer:
     def load_default_characters(self):
         """加载随程序提供的人工校正人物元数据。"""
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        metadata_path = os.path.join(current_dir, "character", "characters.json")
+        metadata_path = os.path.join(
+            current_dir, "data", "character", "characters.json"
+        )
         try:
             with open(metadata_path, "r", encoding="utf-8") as file:
                 data = json.load(file)
@@ -991,7 +993,9 @@ class EventViewer:
         using_bundled_data = self.custom_data_folder is None
         source_name = "内置数据" if using_bundled_data else "自定义目录"
         if using_bundled_data:
-            folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rite")
+            folder = os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), "data", "rite"
+            )
             self.data_source_var.set("内置数据")
             self.folder_path.set("（内置数据）")
         else:

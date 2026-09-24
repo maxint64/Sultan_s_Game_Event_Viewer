@@ -57,7 +57,7 @@ Steam 中可通过“管理 → 浏览本地文件”找到游戏目录。选择
 
 ```powershell
 cd C:\path\to\Sultan_s_Game_Event_Viewer
-uv run --python 3.11 python ".\code\苏丹的游戏事件查看器.py"
+uv run --python 3.11 python ".\event_viewer.py"
 ```
 
 如果系统没有 Tkinter，请安装包含 Tcl/Tk 的完整 Python 3.11。
@@ -67,10 +67,10 @@ uv run --python 3.11 python ".\code\苏丹的游戏事件查看器.py"
 在项目根目录执行：
 
 ```powershell
-uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfirm ".\code\苏丹的游戏事件查看器.spec"
+uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfirm --distpath "." --workpath ".\.build" ".\conf\event_viewer.spec"
 ```
 
-构建完成后，exe 会输出到项目根目录；中间文件位于 `code/build/`。
+构建完成后，exe 会输出到项目根目录；中间文件位于 `.build/`。
 
 如果项目根目录已经存在同名 exe，构建脚本会先将旧文件复制到
 `releases/backup/`，并在文件名末尾添加构建时间，例如：
