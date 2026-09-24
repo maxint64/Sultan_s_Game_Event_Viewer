@@ -1,0 +1,1286 @@
+[
+  {
+    "name": "阿尔图",
+    "aliases": [
+      "主角",
+      "玩家"
+    ],
+    "card_ids": [
+      2000001,
+      2000002,
+      2000003
+    ]
+  },
+  {
+    "name": "巴拉特",
+    "aliases": [],
+    "card_ids": [
+      2000005
+    ]
+  },
+  {
+    "name": "梅姬",
+    "aliases": [
+      "妻子",
+      "你的妻子"
+    ],
+    "card_ids": [
+      2000006,
+      2000457,
+      2000458
+    ]
+  },
+  {
+    "name": "安苏亚",
+    "aliases": [],
+    "card_ids": [
+      2000008
+    ]
+  },
+  {
+    "name": "萨达尔尼",
+    "aliases": [],
+    "card_ids": [
+      2000009
+    ]
+  },
+  {
+    "name": "莎姬",
+    "aliases": [],
+    "card_ids": [
+      2000010
+    ]
+  },
+  {
+    "name": "萨米尔",
+    "aliases": [],
+    "card_ids": [
+      2000011
+    ]
+  },
+  {
+    "name": "赛里曼",
+    "aliases": [
+      "蒙面战士"
+    ],
+    "card_ids": [
+      2000012,
+      2000292
+    ]
+  },
+  {
+    "name": "流浪剑客",
+    "aliases": [],
+    "card_ids": [
+      2000013
+    ]
+  },
+  {
+    "name": "哈比卜",
+    "aliases": [],
+    "card_ids": [
+      2000014
+    ]
+  },
+  {
+    "name": "热娜",
+    "aliases": [],
+    "card_ids": [
+      2000019
+    ]
+  },
+  {
+    "name": "伊曼",
+    "aliases": [],
+    "card_ids": [
+      2000021
+    ]
+  },
+  {
+    "name": "拜铃耶",
+    "aliases": [
+      "拜玲耶"
+    ],
+    "card_ids": [
+      2000022
+    ]
+  },
+  {
+    "name": "苏丹",
+    "aliases": [],
+    "card_ids": [
+      2000024
+    ]
+  },
+  {
+    "name": "哲巴尔",
+    "aliases": [],
+    "card_ids": [
+      2000054
+    ]
+  },
+  {
+    "name": "娜依拉",
+    "aliases": [],
+    "card_ids": [
+      2000055
+    ]
+  },
+  {
+    "name": "盖斯",
+    "aliases": [],
+    "card_ids": [
+      2000056,
+      2000347
+    ]
+  },
+  {
+    "name": "哲瓦德",
+    "aliases": [],
+    "card_ids": [
+      2000057,
+      2000346
+    ]
+  },
+  {
+    "name": "伊玛尼",
+    "aliases": [],
+    "card_ids": [
+      2000059
+    ]
+  },
+  {
+    "name": "阿迪莱",
+    "aliases": [],
+    "card_ids": [
+      2000061
+    ]
+  },
+  {
+    "name": "法图娜",
+    "aliases": [],
+    "card_ids": [
+      2000062
+    ]
+  },
+  {
+    "name": "扎齐伊",
+    "aliases": [
+      "扎奇伊"
+    ],
+    "card_ids": [
+      2000063
+    ]
+  },
+  {
+    "name": "奈布哈尼",
+    "aliases": [],
+    "card_ids": [
+      2000064
+    ]
+  },
+  {
+    "name": "法里斯",
+    "aliases": [],
+    "card_ids": [
+      2000065
+    ]
+  },
+  {
+    "name": "艾迪勒",
+    "aliases": [],
+    "card_ids": [
+      2000067
+    ]
+  },
+  {
+    "name": "麦娜尔",
+    "aliases": [],
+    "card_ids": [
+      2000069
+    ]
+  },
+  {
+    "name": "朱娜",
+    "aliases": [],
+    "card_ids": [
+      2000080
+    ]
+  },
+  {
+    "name": "贾丽拉",
+    "aliases": [],
+    "card_ids": [
+      2000081
+    ]
+  },
+  {
+    "name": "夏玛",
+    "aliases": [],
+    "card_ids": [
+      2000082
+    ]
+  },
+  {
+    "name": "阿里木",
+    "aliases": [],
+    "card_ids": [
+      2000113
+    ]
+  },
+  {
+    "name": "古利斯",
+    "aliases": [],
+    "card_ids": [
+      2000114
+    ]
+  },
+  {
+    "name": "目光锐利的奴隶",
+    "aliases": [],
+    "card_ids": [
+      2000115
+    ]
+  },
+  {
+    "name": "鲁梅拉",
+    "aliases": [],
+    "card_ids": [
+      2000123
+    ]
+  },
+  {
+    "name": "阿图娜尔",
+    "aliases": [],
+    "card_ids": [
+      2000129
+    ]
+  },
+  {
+    "name": "衣衫褴褛的女孩",
+    "aliases": [],
+    "card_ids": [
+      2000161
+    ]
+  },
+  {
+    "name": "阿穆尔",
+    "aliases": [],
+    "card_ids": [
+      2000164
+    ]
+  },
+  {
+    "name": "法德耶",
+    "aliases": [],
+    "card_ids": [
+      2000173
+    ]
+  },
+  {
+    "name": "萨达尔尼的侍女",
+    "aliases": [],
+    "card_ids": [
+      2000176
+    ]
+  },
+  {
+    "name": "不死的生灵",
+    "aliases": [],
+    "card_ids": [
+      2000188
+    ]
+  },
+  {
+    "name": "拉伊德",
+    "aliases": [],
+    "card_ids": [
+      2000195
+    ]
+  },
+  {
+    "name": "杰莫尔",
+    "aliases": [],
+    "card_ids": [
+      2000196
+    ]
+  },
+  {
+    "name": "哈马尔",
+    "aliases": [],
+    "card_ids": [
+      2000197
+    ]
+  },
+  {
+    "name": "阿萨尔",
+    "aliases": [],
+    "card_ids": [
+      2000199
+    ]
+  },
+  {
+    "name": "安苏亚的侍女",
+    "aliases": [],
+    "card_ids": [
+      2000288
+    ]
+  },
+  {
+    "name": "拉扎格",
+    "aliases": [],
+    "card_ids": [
+      2000291
+    ]
+  },
+  {
+    "name": "奈费勒",
+    "aliases": [],
+    "card_ids": [
+      2000312
+    ]
+  },
+  {
+    "name": "拉巴哈",
+    "aliases": [],
+    "card_ids": [
+      2000314
+    ]
+  },
+  {
+    "name": "异国商人的伙计",
+    "aliases": [],
+    "card_ids": [
+      2000325
+    ]
+  },
+  {
+    "name": "娜依拉的丈夫",
+    "aliases": [],
+    "card_ids": [
+      2000327
+    ]
+  },
+  {
+    "name": "刺客",
+    "aliases": [],
+    "card_ids": [
+      2000342,
+      2000360
+    ]
+  },
+  {
+    "name": "阿卜德",
+    "aliases": [],
+    "card_ids": [
+      2000349
+    ]
+  },
+  {
+    "name": "法尔达克",
+    "aliases": [],
+    "card_ids": [
+      2000350
+    ]
+  },
+  {
+    "name": "齐亚德",
+    "aliases": [],
+    "card_ids": [
+      2000351
+    ]
+  },
+  {
+    "name": "玛希尔",
+    "aliases": [],
+    "card_ids": [
+      2000352
+    ]
+  },
+  {
+    "name": "穆尔台兹",
+    "aliases": [],
+    "card_ids": [
+      2000356
+    ]
+  },
+  {
+    "name": "肥胖的囚徒",
+    "aliases": [],
+    "card_ids": [
+      2000361
+    ]
+  },
+  {
+    "name": "干瘦的囚徒",
+    "aliases": [],
+    "card_ids": [
+      2000362
+    ]
+  },
+  {
+    "name": "铁头",
+    "aliases": [],
+    "card_ids": [
+      2000369
+    ]
+  },
+  {
+    "name": "快脚",
+    "aliases": [
+      "阿木剌·图斯"
+    ],
+    "card_ids": [
+      2000370,
+      2000794
+    ]
+  },
+  {
+    "name": "小圆",
+    "aliases": [],
+    "card_ids": [
+      2000371
+    ]
+  },
+  {
+    "name": "法拉杰",
+    "aliases": [],
+    "card_ids": [
+      2000372,
+      2000522,
+      2000523
+    ]
+  },
+  {
+    "name": "家族武士",
+    "aliases": [],
+    "card_ids": [
+      2000379
+    ]
+  },
+  {
+    "name": "夏玛的父亲",
+    "aliases": [],
+    "card_ids": [
+      2000397
+    ]
+  },
+  {
+    "name": "死囚",
+    "aliases": [],
+    "card_ids": [
+      2000425
+    ]
+  },
+  {
+    "name": "巨人",
+    "aliases": [],
+    "card_ids": [
+      2000427
+    ]
+  },
+  {
+    "name": "小薇",
+    "aliases": [],
+    "card_ids": [
+      2000432
+    ]
+  },
+  {
+    "name": "小安",
+    "aliases": [],
+    "card_ids": [
+      2000433
+    ]
+  },
+  {
+    "name": "小留",
+    "aliases": [],
+    "card_ids": [
+      2000434
+    ]
+  },
+  {
+    "name": "主角兄弟",
+    "aliases": [],
+    "card_ids": [
+      2000456
+    ]
+  },
+  {
+    "name": "马尔基娜",
+    "aliases": [],
+    "card_ids": [
+      2000459
+    ]
+  },
+  {
+    "name": "哈桑",
+    "aliases": [],
+    "card_ids": [
+      2000460
+    ]
+  },
+  {
+    "name": "贝姬夫人",
+    "aliases": [],
+    "card_ids": [
+      2000461
+    ]
+  },
+  {
+    "name": "多眼智者",
+    "aliases": [],
+    "card_ids": [
+      2000493
+    ]
+  },
+  {
+    "name": "暗影黑手",
+    "aliases": [],
+    "card_ids": [
+      2000494
+    ]
+  },
+  {
+    "name": "蛇女",
+    "aliases": [],
+    "card_ids": [
+      2000495
+    ]
+  },
+  {
+    "name": "空壳骑士",
+    "aliases": [],
+    "card_ids": [
+      2000496
+    ]
+  },
+  {
+    "name": "盲犬",
+    "aliases": [],
+    "card_ids": [
+      2000497
+    ]
+  },
+  {
+    "name": "利齿残骸",
+    "aliases": [],
+    "card_ids": [
+      2000498
+    ]
+  },
+  {
+    "name": "扭曲残骸",
+    "aliases": [],
+    "card_ids": [
+      2000499
+    ]
+  },
+  {
+    "name": "魅魔",
+    "aliases": [],
+    "card_ids": [
+      2000500
+    ]
+  },
+  {
+    "name": "填充者",
+    "aliases": [],
+    "card_ids": [
+      2000501
+    ]
+  },
+  {
+    "name": "将军",
+    "aliases": [],
+    "card_ids": [
+      2000503
+    ]
+  },
+  {
+    "name": "禁卫",
+    "aliases": [],
+    "card_ids": [
+      2000504
+    ]
+  },
+  {
+    "name": "武士",
+    "aliases": [],
+    "card_ids": [
+      2000505
+    ]
+  },
+  {
+    "name": "维齐尔",
+    "aliases": [],
+    "card_ids": [
+      2000506
+    ]
+  },
+  {
+    "name": "书记官",
+    "aliases": [],
+    "card_ids": [
+      2000507
+    ]
+  },
+  {
+    "name": "税吏",
+    "aliases": [],
+    "card_ids": [
+      2000508
+    ]
+  },
+  {
+    "name": "年长的宠妃",
+    "aliases": [],
+    "card_ids": [
+      2000509
+    ]
+  },
+  {
+    "name": "妖媚的宠妃",
+    "aliases": [],
+    "card_ids": [
+      2000510
+    ]
+  },
+  {
+    "name": "女奴",
+    "aliases": [],
+    "card_ids": [
+      2000511
+    ]
+  },
+  {
+    "name": "无名的乞丐",
+    "aliases": [],
+    "card_ids": [
+      2000516
+    ]
+  },
+  {
+    "name": "受虐待的妇人",
+    "aliases": [],
+    "card_ids": [
+      2000536
+    ]
+  },
+  {
+    "name": "口无遮拦的囚犯",
+    "aliases": [],
+    "card_ids": [
+      2000537
+    ]
+  },
+  {
+    "name": "老赌鬼",
+    "aliases": [],
+    "card_ids": [
+      2000546
+    ]
+  },
+  {
+    "name": "复活的行尸",
+    "aliases": [],
+    "card_ids": [
+      2000554
+    ]
+  },
+  {
+    "name": "挑战者",
+    "aliases": [],
+    "card_ids": [
+      2000559,
+      2000560,
+      2000561,
+      2000562,
+      2000563,
+      2000564,
+      2000565
+    ]
+  },
+  {
+    "name": "青年官吏",
+    "aliases": [],
+    "card_ids": [
+      2000568
+    ]
+  },
+  {
+    "name": "女护卫",
+    "aliases": [],
+    "card_ids": [
+      2000569
+    ]
+  },
+  {
+    "name": "施虐的男人",
+    "aliases": [],
+    "card_ids": [
+      2000684
+    ]
+  },
+  {
+    "name": "年老的女奴",
+    "aliases": [],
+    "card_ids": [
+      2000699
+    ]
+  },
+  {
+    "name": "激进的贵族",
+    "aliases": [],
+    "card_ids": [
+      2000736,
+      2000748
+    ]
+  },
+  {
+    "name": "自命不凡的贵族",
+    "aliases": [],
+    "card_ids": [
+      2000738
+    ]
+  },
+  {
+    "name": "离群的贵族",
+    "aliases": [],
+    "card_ids": [
+      2000743
+    ]
+  },
+  {
+    "name": "火焰大王",
+    "aliases": [],
+    "card_ids": [
+      2000762
+    ]
+  },
+  {
+    "name": "年轻的贵族",
+    "aliases": [],
+    "card_ids": [
+      2000764
+    ]
+  },
+  {
+    "name": "宽裕的贵族",
+    "aliases": [],
+    "card_ids": [
+      2000765
+    ]
+  },
+  {
+    "name": "年迈的贵族",
+    "aliases": [],
+    "card_ids": [
+      2000766
+    ]
+  },
+  {
+    "name": "蛮族的女奴",
+    "aliases": [],
+    "card_ids": [
+      2000770
+    ]
+  },
+  {
+    "name": "芮尔",
+    "aliases": [],
+    "card_ids": [
+      2000771
+    ]
+  },
+  {
+    "name": "索拉薇儿",
+    "aliases": [],
+    "card_ids": [
+      2000772
+    ]
+  },
+  {
+    "name": "哈布娜",
+    "aliases": [],
+    "card_ids": [
+      2000773
+    ]
+  },
+  {
+    "name": "阿鲁米娜",
+    "aliases": [
+      "快脚的老婆"
+    ],
+    "card_ids": [
+      2000774,
+      2000795
+    ]
+  },
+  {
+    "name": "角斗士",
+    "aliases": [],
+    "card_ids": [
+      2000777
+    ]
+  },
+  {
+    "name": "贪污官吏",
+    "aliases": [],
+    "card_ids": [
+      2000782
+    ]
+  },
+  {
+    "name": "黑街勇士",
+    "aliases": [],
+    "card_ids": [
+      2000784
+    ]
+  },
+  {
+    "name": "武馆高手",
+    "aliases": [],
+    "card_ids": [
+      2000785
+    ]
+  },
+  {
+    "name": "魔法剑士",
+    "aliases": [],
+    "card_ids": [
+      2000786
+    ]
+  },
+  {
+    "name": "小召唤兽",
+    "aliases": [],
+    "card_ids": [
+      2000787
+    ]
+  },
+  {
+    "name": "美艳的妓女",
+    "aliases": [],
+    "card_ids": [
+      2000789
+    ]
+  },
+  {
+    "name": "蒙面风流客",
+    "aliases": [],
+    "card_ids": [
+      2000791
+    ]
+  },
+  {
+    "name": "布缇娜",
+    "aliases": [],
+    "card_ids": [
+      2000792
+    ]
+  },
+  {
+    "name": "妖言惑众之人",
+    "aliases": [],
+    "card_ids": [
+      2000849
+    ]
+  },
+  {
+    "name": "娇弱的女奴",
+    "aliases": [],
+    "card_ids": [
+      2000851
+    ]
+  },
+  {
+    "name": "有手艺的女奴",
+    "aliases": [],
+    "card_ids": [
+      2000852
+    ]
+  },
+  {
+    "name": "神秘人",
+    "aliases": [],
+    "card_ids": [
+      2000860
+    ]
+  },
+  {
+    "name": "？",
+    "aliases": [],
+    "card_ids": [
+      2000861
+    ]
+  },
+  {
+    "name": "白肚皮",
+    "aliases": [],
+    "card_ids": [
+      2000886
+    ]
+  },
+  {
+    "name": "被覆者",
+    "aliases": [],
+    "card_ids": [
+      2000896
+    ]
+  },
+  {
+    "name": "阿卜德的盾卫",
+    "aliases": [],
+    "card_ids": [
+      2000897
+    ]
+  },
+  {
+    "name": "阿卜德的剑卫",
+    "aliases": [],
+    "card_ids": [
+      2000898
+    ]
+  },
+  {
+    "name": "小萨法",
+    "aliases": [],
+    "card_ids": [
+      2000899
+    ]
+  },
+  {
+    "name": "近卫",
+    "aliases": [],
+    "card_ids": [
+      2000923,
+      2000924,
+      2000925,
+      2000926
+    ]
+  },
+  {
+    "name": "闹事的混蛋",
+    "aliases": [],
+    "card_ids": [
+      2000933
+    ]
+  },
+  {
+    "name": "嫉妒的大臣",
+    "aliases": [],
+    "card_ids": [
+      2000934
+    ]
+  },
+  {
+    "name": "流民乞丐",
+    "aliases": [],
+    "card_ids": [
+      2000935
+    ]
+  },
+  {
+    "name": "西雅玛",
+    "aliases": [],
+    "card_ids": [
+      2000937
+    ]
+  },
+  {
+    "name": "恶臭与隐疾的女神",
+    "aliases": [],
+    "card_ids": [
+      2000938
+    ]
+  },
+  {
+    "name": "冒险者佣兵",
+    "aliases": [],
+    "card_ids": [
+      2000948,
+      2001018
+    ]
+  },
+  {
+    "name": "奴隶猎人",
+    "aliases": [],
+    "card_ids": [
+      2000971
+    ]
+  },
+  {
+    "name": "老库克",
+    "aliases": [],
+    "card_ids": [
+      2000992
+    ]
+  },
+  {
+    "name": "斯瓦萨尔",
+    "aliases": [],
+    "card_ids": [
+      2001020
+    ]
+  },
+  {
+    "name": "高原的圣主",
+    "aliases": [],
+    "card_ids": [
+      2001023
+    ]
+  },
+  {
+    "name": "神秘的客人",
+    "aliases": [],
+    "card_ids": [
+      2001059
+    ]
+  },
+  {
+    "name": "剃刀少女",
+    "aliases": [],
+    "card_ids": [
+      2001068
+    ]
+  },
+  {
+    "name": "肢解兽",
+    "aliases": [],
+    "card_ids": [
+      2001069
+    ]
+  },
+  {
+    "name": "触手树",
+    "aliases": [],
+    "card_ids": [
+      2001070
+    ]
+  },
+  {
+    "name": "纯净者祭司",
+    "aliases": [],
+    "card_ids": [
+      2001071
+    ]
+  },
+  {
+    "name": "掠食者",
+    "aliases": [],
+    "card_ids": [
+      2001082,
+      2001083,
+      2001084,
+      2001085
+    ]
+  },
+  {
+    "name": "乞丐",
+    "aliases": [],
+    "card_ids": [
+      2001086
+    ]
+  },
+  {
+    "name": "商人",
+    "aliases": [],
+    "card_ids": [
+      2001087
+    ]
+  },
+  {
+    "name": "贵族",
+    "aliases": [],
+    "card_ids": [
+      2001088,
+      2001089
+    ]
+  },
+  {
+    "name": "富家子弟",
+    "aliases": [],
+    "card_ids": [
+      2001097
+    ]
+  },
+  {
+    "name": "贵族子弟",
+    "aliases": [],
+    "card_ids": [
+      2001098
+    ]
+  },
+  {
+    "name": "卑微仆役",
+    "aliases": [],
+    "card_ids": [
+      2001099
+    ]
+  },
+  {
+    "name": "无知少年",
+    "aliases": [],
+    "card_ids": [
+      2001100
+    ]
+  },
+  {
+    "name": "骷髅骑士",
+    "aliases": [],
+    "card_ids": [
+      2001110
+    ]
+  },
+  {
+    "name": "大魅魔",
+    "aliases": [],
+    "card_ids": [
+      2001111
+    ]
+  },
+  {
+    "name": "古代肢解兽",
+    "aliases": [],
+    "card_ids": [
+      2001112
+    ]
+  },
+  {
+    "name": "复生月牙",
+    "aliases": [],
+    "card_ids": [
+      2001119
+    ]
+  },
+  {
+    "name": "双头食人魔",
+    "aliases": [],
+    "card_ids": [
+      2001120
+    ]
+  },
+  {
+    "name": "怪异的密神",
+    "aliases": [],
+    "card_ids": [
+      2001121
+    ]
+  },
+  {
+    "name": "哲学的男人",
+    "aliases": [],
+    "card_ids": [
+      2001163
+    ]
+  },
+  {
+    "name": "梅姬？",
+    "aliases": [],
+    "card_ids": [
+      2001174
+    ]
+  },
+  {
+    "name": "奈布哈尼？",
+    "aliases": [],
+    "card_ids": [
+      2001175
+    ]
+  },
+  {
+    "name": "奈费勒？",
+    "aliases": [],
+    "card_ids": [
+      2001176
+    ]
+  },
+  {
+    "name": "伊曼？",
+    "aliases": [],
+    "card_ids": [
+      2001177
+    ]
+  },
+  {
+    "name": "夏玛？",
+    "aliases": [],
+    "card_ids": [
+      2001178
+    ]
+  },
+  {
+    "name": "朱娜？",
+    "aliases": [],
+    "card_ids": [
+      2001179
+    ]
+  },
+  {
+    "name": "贾丽拉？",
+    "aliases": [],
+    "card_ids": [
+      2001180
+    ]
+  },
+  {
+    "name": "古老的镜子",
+    "aliases": [
+      "小筹"
+    ],
+    "card_ids": [
+      2001182
+    ]
+  },
+  {
+    "name": "边境领主",
+    "aliases": [],
+    "card_ids": [
+      2001187
+    ]
+  },
+  {
+    "name": "安妮塔",
+    "aliases": [],
+    "card_ids": [
+      2001193
+    ]
+  },
+  {
+    "name": "卡帕尔",
+    "aliases": [],
+    "card_ids": [
+      2001194
+    ]
+  },
+  {
+    "name": "镜灵",
+    "aliases": [],
+    "card_ids": [
+      2001217
+    ]
+  },
+  {
+    "name": "流民部队",
+    "aliases": [],
+    "card_ids": [
+      2001222
+    ]
+  },
+  {
+    "name": "佣兵护卫队",
+    "aliases": [],
+    "card_ids": [
+      2001250
+    ]
+  },
+  {
+    "name": "羊肉炉",
+    "aliases": [],
+    "card_ids": [
+      2001343
+    ]
+  }
+]
