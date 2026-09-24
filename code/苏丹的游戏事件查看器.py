@@ -15,13 +15,15 @@ import copy
 
 class EventViewer:
     CHARACTER_DEFAULT_SELECTION = "所有人"
-    EVENT_DEFAULT_SELECTION = "请输入或选择"
+    CHARACTER_PLACEHOLDER = "输入角色ID、名称、别称、或关键词"
+    EVENT_DEFAULT_SELECTION = "输入事件ID、标题或关键词"
+    NOT_LOADED_TEXT = "正在加载内置数据..."
+    NO_EVENT_TEXT = "请先选择角色和事件"
 
     def __init__(self, root):
         self.root = root
         self.root.title("事件分支查看器")
-        self.root.geometry("1200x800")
-        self.root.minsize(1000, 700)
+        self.configure_initial_geometry()
         
         # 全局排版：11pt 在 96 DPI 下约为 14.7px，不低于 12px。
         self.font_family = "Microsoft YaHei UI" if os.name == "nt" else tkfont.nametofont("TkDefaultFont").actual("family")
@@ -36,11 +38,14 @@ class EventViewer:
         self.event_data = {}
         self.current_event = None
         self.current_settlement = None
+        self.current_detail = None
         self.comments_data = {}  # 存储注释信息
         self.all_event_names = []  # 存储所有事件名称
         self.available_event_names = []  # 当前人物筛选后的事件名称
         self.event_name_to_file = {}
         self.event_card_ids = {}
+        self.custom_data_folder = None
+        self.selected_game_directory = None
         self.default_characters = self.load_default_characters()
         self.characters = copy.deepcopy(self.default_characters)
         self.character_display_map = {}
@@ -52,11 +57,49 @@ class EventViewer:
         # 创建UI
         self.create_ui()
         self.apply_theme(self.system_dark_mode)
-
-        # 加载数据
-        self.load_event_files()
+        self.show_empty_state(self.NOT_LOADED_TEXT)
+        self.root.after(0, self.load_event_files)
         if os.name == "nt":
             self.root.after(2000, self.check_system_theme)
+
+    def configure_initial_geometry(self):
+        """窗口占满屏幕可用高度，并保持适合阅读的常规宽度。"""
+        left = top = 0
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        work_width = screen_width
+        work_height = screen_height
+
+        if os.name == "nt":
+            try:
+                import ctypes
+
+                class Rect(ctypes.Structure):
+                    _fields_ = [
+                        ("left", ctypes.c_long),
+                        ("top", ctypes.c_long),
+                        ("right", ctypes.c_long),
+                        ("bottom", ctypes.c_long),
+                    ]
+
+                rect = Rect()
+                if ctypes.windll.user32.SystemParametersInfoW(
+                    0x0030, 0, ctypes.byref(rect), 0
+                ):
+                    left, top = rect.left, rect.top
+                    work_width = rect.right - rect.left
+                    work_height = rect.bottom - rect.top
+            except (AttributeError, OSError):
+                pass
+
+        taskbar_height = max(0, screen_height - work_height)
+        window_height = max(1, int(screen_height * 0.9) - taskbar_height)
+        window_height = min(window_height, work_height)
+        window_width = min(1200, work_width)
+        x = left + max(0, (work_width - window_width) // 2)
+        y = top + max(0, (work_height - window_height) // 2)
+        self.root.geometry(f"{window_width}x{window_height}+{x}+{y}")
+        self.root.minsize(min(1000, work_width), min(700, window_height))
 
     def configure_global_fonts(self):
         """统一 Tk/ttk 和传统 Tk 控件使用的命名字体。"""
@@ -109,6 +152,8 @@ class EventViewer:
                 "comment": "#6a9955",
                 "info": "#75b7ff",
                 "error": "#ff6b6b",
+                "hover": "#4a4a4a",
+                "player_name": "#ffd24a",
             }
         else:
             colors = {
@@ -121,6 +166,8 @@ class EventViewer:
                 "comment": "#008000",
                 "info": "#0067c0",
                 "error": "#c42b1c",
+                "hover": "#e5f1fb",
+                "player_name": "#a66f00",
             }
 
         bg_color = colors["bg"]
@@ -138,29 +185,83 @@ class EventViewer:
 
         style.configure("TFrame", background=bg_color)
         style.configure("TLabel", background=bg_color, foreground=fg_color, font=self.font)
-        style.configure("TButton", background=input_bg, foreground=fg_color, font=self.font, padding=(16, 4))
+        style.configure(
+            "TButton",
+            background=input_bg,
+            foreground=fg_color,
+            font=self.font,
+            padding=(16, 4),
+            bordercolor=border_color,
+            lightcolor=input_bg,
+            darkcolor=input_bg,
+        )
         style.map("TButton", background=[("active", select_bg)], foreground=[("active", select_fg)])
-        style.configure("TEntry", fieldbackground=input_bg, foreground=fg_color, font=self.font, padding=(8, 5))
-        style.configure("TCombobox", background=input_bg, fieldbackground=input_bg, foreground=fg_color, font=self.font, padding=(8, 5))
+        style.configure(
+            "TEntry",
+            fieldbackground=input_bg,
+            foreground=fg_color,
+            font=self.font,
+            padding=(8, 5),
+            bordercolor=border_color,
+            lightcolor=input_bg,
+            darkcolor=input_bg,
+        )
+        style.configure(
+            "TCombobox",
+            background=input_bg,
+            fieldbackground=input_bg,
+            foreground=fg_color,
+            arrowcolor=fg_color,
+            font=self.font,
+            padding=(8, 5),
+            bordercolor=border_color,
+            lightcolor=input_bg,
+            darkcolor=input_bg,
+        )
         style.map("TCombobox", fieldbackground=[("readonly", input_bg)], foreground=[("readonly", fg_color)])
 
-        style.configure("Treeview",
-                        background=input_bg,
-                        foreground=fg_color,
-                        fieldbackground=input_bg,
-                        font=self.font,
-                        rowheight=32)
-        style.configure("Treeview.Heading",
-                        background=input_bg,
-                        foreground=fg_color,
-                        font=self.heading_font,
-                        padding=(8, 5))
+        style.configure(
+            "Treeview",
+            background=input_bg,
+            foreground=fg_color,
+            fieldbackground=input_bg,
+            font=self.font,
+            rowheight=32,
+            borderwidth=0,
+            relief="flat",
+        )
+        style.configure(
+            "Treeview.Heading",
+            background=fg_color,
+            foreground=input_bg,
+            font=self.heading_font,
+            padding=(8, 5),
+            borderwidth=0,
+            relief="flat",
+        )
+        style.map(
+            "Treeview.Heading",
+            background=[("active", fg_color), ("pressed", fg_color)],
+            foreground=[("active", input_bg), ("pressed", input_bg)],
+            relief=[("active", "flat"), ("pressed", "flat")],
+        )
         style.map("Treeview",
                   background=[("selected", select_bg)],
                   foreground=[("selected", select_fg)])
 
-        style.configure("TLabelframe", background=bg_color, foreground=fg_color)
-        style.configure("TLabelframe.Label", background=bg_color, foreground=fg_color, font=self.font)
+        style.configure(
+            "TLabelframe",
+            background=bg_color,
+            foreground=fg_color,
+            borderwidth=0,
+            relief="flat",
+            bordercolor=bg_color,
+            lightcolor=bg_color,
+            darkcolor=bg_color,
+        )
+        style.configure("TLabelframe.Label", background=bg_color, foreground=fg_color, font=self.heading_font)
+        style.configure("Status.TLabel", background=input_bg, foreground=fg_color, padding=(10, 6))
+        style.configure("ColumnSeparator.TSeparator", background=border_color)
         style.configure(
             "TScrollbar",
             background=input_bg,
@@ -169,6 +270,8 @@ class EventViewer:
             arrowcolor=fg_color,
             lightcolor=input_bg,
             darkcolor=input_bg,
+            borderwidth=0,
+            relief="flat",
         )
         style.map("TScrollbar", background=[("active", select_bg)])
 
@@ -190,6 +293,9 @@ class EventViewer:
                     selectforeground=select_fg,
                     highlightbackground=border_color,
                     highlightcolor=select_bg,
+                    highlightthickness=0,
+                    borderwidth=0,
+                    relief=tk.FLAT,
                 )
                 widget.vbar.config(
                     background=input_bg,
@@ -198,6 +304,16 @@ class EventViewer:
                     borderwidth=0,
                     highlightthickness=0,
                     relief=tk.FLAT,
+                )
+                widget.tag_configure(
+                    "player_name",
+                    foreground=colors["player_name"],
+                    font=(self.font_family, 14, "bold"),
+                )
+        for attribute in ("slot_tree", "settlement_tree"):
+            if hasattr(self, attribute):
+                getattr(self, attribute).tag_configure(
+                    "hover", background=colors["hover"]
                 )
         if hasattr(self, "result_text"):
             self.result_text.tag_configure("comment", foreground=colors["comment"])
@@ -264,58 +380,88 @@ class EventViewer:
         main_frame.pack(fill=tk.BOTH, expand=True)
 
         
-        # 创建顶部控制区
-        control_frame = ttk.Frame(main_frame)
+        # 数据来源：内置数据不暴露内部路径，自定义数据显示用户选择的目录
+        control_frame = ttk.LabelFrame(main_frame, text="数据来源", padding=8)
         control_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        # 文件夹选择
-        ttk.Label(control_frame, text="文件夹:", font=self.font).pack(side=tk.LEFT, padx=(0, 5))
-        self.folder_path = tk.StringVar(value=r"如果官方有更新，选择你的游戏文件夹，Sultan's Game\Sultan's Game_Data\StreamingAssets\config\rite")
-        folder_entry = ttk.Entry(control_frame, textvariable=self.folder_path)
-        folder_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
-        
-        ttk.Button(control_frame, text="浏览", command=self.browse_folder).pack(side=tk.LEFT, padx=(0, 5))
-        ttk.Button(control_frame, text="加载", command=self.load_event_files).pack(side=tk.LEFT)
-        
-        # 玩家名称设置
-        player_frame = ttk.Frame(main_frame)
-        player_frame.pack(fill=tk.X, pady=(0, 10))
-        
-        ttk.Label(player_frame, text="玩家名称 [player.name]:", font=self.font).pack(side=tk.LEFT, padx=(0, 5))
-        self.player_name = tk.StringVar(value="玩家")
-        player_entry = ttk.Entry(player_frame, textvariable=self.player_name)
-        player_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5))
+        control_frame.grid_columnconfigure(0, weight=1)
+
+        self.data_source_var = tk.StringVar(value="内置数据")
+        self.folder_path = tk.StringVar(value="（内置数据）")
+        ttk.Entry(
+            control_frame, textvariable=self.folder_path, state="readonly"
+        ).grid(row=0, column=0, sticky="ew", padx=(0, 8))
+        self.load_button = ttk.Button(
+            control_frame,
+            text="选择游戏目录并重新加载数据",
+            width=26,
+            command=self.browse_folder,
+        )
+        self.load_button.grid(row=0, column=1, padx=(0, 6))
+        self.reset_button = ttk.Button(
+            control_frame,
+            text="重置为内置数据",
+            width=18,
+            command=self.reset_to_bundled_data,
+        )
+        self.reset_button.grid(row=0, column=2)
+
+        # 玩家名称只影响文本显示，不参与事件筛选
+        display_frame = ttk.LabelFrame(main_frame, text="显示设置", padding=8)
+        display_frame.pack(fill=tk.X, pady=(0, 10))
+        display_frame.grid_columnconfigure(2, weight=1)
+
+        ttk.Label(display_frame, text="玩家名称：").grid(
+            row=0, column=0, padx=(0, 6), sticky="w"
+        )
+        self.player_name = tk.StringVar(value="阿尔图")
+        ttk.Entry(display_frame, textvariable=self.player_name, width=24).grid(
+            row=0, column=1, sticky="w"
+        )
+        ttk.Label(
+            display_frame, text="（用于替换事件文本中的[player.name]）"
+        ).grid(row=0, column=2, padx=(8, 0), sticky="w")
         self.player_name.trace_add("write", self.on_player_name_change)
-        
-        # 人物和事件选择框架
-        event_select_frame = ttk.Frame(main_frame)
+
+        # 仅放置真正影响事件列表的筛选项
+        event_select_frame = ttk.LabelFrame(main_frame, text="筛选条件", padding=8)
         event_select_frame.pack(fill=tk.X, pady=(0, 10))
         event_select_frame.grid_columnconfigure(1, weight=1, uniform="search")
         event_select_frame.grid_columnconfigure(3, weight=1, uniform="search")
 
-        ttk.Label(event_select_frame, text="角色:", font=self.font).grid(row=0, column=0, padx=(0, 5), sticky="w")
+        ttk.Label(event_select_frame, text="角色：").grid(
+            row=0, column=0, padx=(0, 5), sticky="w"
+        )
         self.character_combo = ttk.Combobox(event_select_frame, font=self.font)
         self.character_combo.grid(row=0, column=1, sticky="ew")
         self.character_combo.bind("<KeyRelease>", self.filter_characters)
         self.character_combo.bind("<<ComboboxSelected>>", self.on_character_selected)
         self.character_combo.bind("<Return>", self.on_character_selected)
-        self.character_combo.bind("<FocusIn>", lambda event: self.clear_placeholder(self.character_combo))
-        self.character_combo.bind("<FocusOut>", lambda event: self.restore_placeholder(self.character_combo))
+        self.character_combo.bind(
+            "<FocusIn>", lambda event: self.clear_placeholder(self.character_combo)
+        )
+        self.character_combo.bind(
+            "<FocusOut>", lambda event: self.restore_placeholder(self.character_combo)
+        )
 
-        ttk.Label(event_select_frame, text="事件:", font=self.font).grid(row=0, column=2, padx=(15, 5), sticky="w")
+        ttk.Label(event_select_frame, text="事件：").grid(
+            row=0, column=2, padx=(15, 5), sticky="w"
+        )
         self.event_combo = ttk.Combobox(event_select_frame, font=self.font)
         self.event_combo.grid(row=0, column=3, sticky="ew")
         self.event_combo.bind("<KeyRelease>", self.filter_events)
         self.event_combo.bind("<<ComboboxSelected>>", self.on_event_selected)
         self.event_combo.bind("<Return>", self.on_event_selected)
-        self.event_combo.bind("<FocusIn>", lambda event: self.clear_placeholder(self.event_combo))
-        self.event_combo.bind("<FocusOut>", lambda event: self.restore_placeholder(self.event_combo))
+        self.event_combo.bind(
+            "<FocusIn>", lambda event: self.clear_placeholder(self.event_combo)
+        )
+        self.event_combo.bind(
+            "<FocusOut>", lambda event: self.restore_placeholder(self.event_combo)
+        )
         
         # 创建事件描述区域 - 去掉边框
-        description_frame = ttk.Frame(main_frame)
+        description_frame = ttk.LabelFrame(main_frame, text="事件说明", padding=6)
         description_frame.pack(fill=tk.X, pady=(0, 10))
         
-        ttk.Label(description_frame, text="事件描述", font=self.font).pack(anchor=tk.W)
         
         # 事件描述文本
         self.event_desc_text = scrolledtext.ScrolledText(description_frame, wrap=tk.WORD, font=self.font, height=3)
@@ -332,22 +478,22 @@ class EventViewer:
         
         # 创建中间区域 - 分为左右两列
         middle_frame = ttk.Frame(main_frame)
-        middle_frame.pack(fill=tk.BOTH, expand=False, pady=(0, 10))
+        middle_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
         middle_frame.grid_columnconfigure(0, weight=1)
         middle_frame.grid_columnconfigure(1, weight=1)
+        middle_frame.grid_rowconfigure(0, weight=1)
         
         # 左侧 - Slot条件列表 - 去掉边框
-        slot_frame = ttk.Frame(middle_frame)
+        slot_frame = ttk.LabelFrame(middle_frame, text="触发条件（Slot）", padding=6)
         slot_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
         
-        ttk.Label(slot_frame, text="Slot条件列表", font=self.font).pack(anchor=tk.W)
         
         # Slot条件列表
         self.slot_tree = ttk.Treeview(slot_frame, columns=("id", "description"), show="headings", height=8)
-        self.slot_tree.heading("id", text="ID")
-        self.slot_tree.heading("description", text="条件描述")
-        self.slot_tree.column("id", width=80)
-        self.slot_tree.column("description", width=400)
+        self.slot_tree.heading("id", text="ID", anchor=tk.W)
+        self.slot_tree.heading("description", text="条件描述", anchor=tk.W)
+        self.slot_tree.column("id", width=100, minwidth=80, stretch=False)
+        self.slot_tree.column("description", width=400, minwidth=180, stretch=True)
         
         # 添加滚动条
         slot_scrollbar = ttk.Scrollbar(slot_frame, orient="vertical", command=self.slot_tree.yview)
@@ -357,19 +503,24 @@ class EventViewer:
         self.slot_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         slot_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.slot_tree.bind("<<TreeviewSelect>>", self.on_slot_selected)
+        self.slot_tree.bind("<Motion>", self.on_tree_motion)
+        self.slot_tree.bind("<Leave>", self.on_tree_leave)
+        self.slot_column_separator = ttk.Separator(
+            self.slot_tree, orient=tk.VERTICAL, style="ColumnSeparator.TSeparator"
+        )
+        self.slot_column_separator.place(x=100, y=0, relheight=1)
         
         # 右侧 - Settlement条件列表 - 去掉边框
-        settlement_frame = ttk.Frame(middle_frame)
+        settlement_frame = ttk.LabelFrame(middle_frame, text="结算条件（Settlement）", padding=6)
         settlement_frame.grid(row=0, column=1, sticky="nsew", padx=(5, 0))
         
-        ttk.Label(settlement_frame, text="Settlement条件列表", font=self.font).pack(anchor=tk.W)
         
         # Settlement条件列表
         self.settlement_tree = ttk.Treeview(settlement_frame, columns=("id", "description"), show="headings", height=8)
-        self.settlement_tree.heading("id", text="ID")
-        self.settlement_tree.heading("description", text="条件描述")
-        self.settlement_tree.column("id", width=80)
-        self.settlement_tree.column("description", width=400)
+        self.settlement_tree.heading("id", text="ID", anchor=tk.W)
+        self.settlement_tree.heading("description", text="条件描述", anchor=tk.W)
+        self.settlement_tree.column("id", width=110, minwidth=80, stretch=False)
+        self.settlement_tree.column("description", width=400, minwidth=180, stretch=True)
         
         # 添加滚动条
         settlement_scrollbar = ttk.Scrollbar(settlement_frame, orient="vertical", command=self.settlement_tree.yview)
@@ -379,9 +530,17 @@ class EventViewer:
         self.settlement_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
         settlement_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.settlement_tree.bind("<<TreeviewSelect>>", self.on_settlement_selected)
+        self.settlement_tree.bind("<Motion>", self.on_tree_motion)
+        self.settlement_tree.bind("<Leave>", self.on_tree_leave)
+        self.settlement_column_separator = ttk.Separator(
+            self.settlement_tree,
+            orient=tk.VERTICAL,
+            style="ColumnSeparator.TSeparator",
+        )
+        self.settlement_column_separator.place(x=110, y=0, relheight=1)
         
         # 创建结果文本区域 - 去掉边框
-        result_frame = ttk.Frame(main_frame)
+        result_frame = ttk.LabelFrame(main_frame, text="事件内容 / 原始脚本", padding=6)
         result_frame.pack(fill=tk.BOTH, expand=True)
                 
         # 结果标题
@@ -405,6 +564,11 @@ class EventViewer:
         self.result_text.tag_configure("title", font=self.title_font)
         self.result_text.tag_configure("content", font=self.font)
         self.result_text.tag_configure("comment", font=(self.font_family, 11, "italic"), foreground=colors["comment"])
+
+        self.status_var = tk.StringVar(value="正在加载内置数据...")
+        ttk.Label(main_frame, textvariable=self.status_var, style="Status.TLabel", anchor="w").pack(
+            side=tk.BOTTOM, fill=tk.X, pady=(8, 0)
+        )
         
     def load_default_characters(self):
         """加载随程序提供的人工校正人物元数据。"""
@@ -526,17 +690,17 @@ class EventViewer:
         }
         options = [self.CHARACTER_DEFAULT_SELECTION, *self.character_display_map.keys()]
         self.character_combo["values"] = options
-        self.character_combo.set(self.CHARACTER_DEFAULT_SELECTION)
+        self.character_combo.set(self.CHARACTER_PLACEHOLDER)
 
     def clear_placeholder(self, combo):
-        placeholder = self.CHARACTER_DEFAULT_SELECTION if combo is self.character_combo else self.EVENT_DEFAULT_SELECTION
+        placeholder = self.CHARACTER_PLACEHOLDER if combo is self.character_combo else self.EVENT_DEFAULT_SELECTION
         if combo.get() == placeholder:
             combo.set("")
 
     def restore_placeholder(self, combo):
         if not combo.get().strip():
             if combo is self.character_combo:
-                combo.set(self.CHARACTER_DEFAULT_SELECTION)
+                combo.set(self.CHARACTER_PLACEHOLDER)
                 self.on_character_selected()
             elif combo is self.event_combo:
                 combo.set(self.EVENT_DEFAULT_SELECTION)
@@ -552,18 +716,61 @@ class EventViewer:
     def clear_event_display(self):
         self.current_event = None
         self.current_settlement = None
-        self.set_text_content(self.event_desc_text)
-        self.set_text_content(self.result_text)
+        self.current_detail = None
+        self.show_empty_state(self.NO_EVENT_TEXT)
+
+    def show_empty_state(self, message):
+        """在所有详情区域显示当前没有数据的原因。"""
+        self.set_text_content(self.event_desc_text, message)
+        self.set_text_content(self.result_text, message)
         self.result_title_var.set("")
         for tree in (self.slot_tree, self.settlement_tree):
             for item in tree.get_children():
                 tree.delete(item)
+            tree.insert("", "end", values=("", message), tags=("empty",))
+
+    def set_status(self, message):
+        self.status_var.set(message)
+        self.root.update_idletasks()
+
+    def on_tree_motion(self, event):
+        """鼠标经过条件行时，仅高亮当前行。"""
+        tree = event.widget
+        item = tree.identify_row(event.y)
+        previous = getattr(tree, "_hover_item", "")
+        if item == previous:
+            return
+
+        if previous and tree.exists(previous):
+            tags = tuple(
+                tag for tag in tree.item(previous, "tags") if tag != "hover"
+            )
+            tree.item(previous, tags=tags)
+
+        if item:
+            tags = tuple(tree.item(item, "tags"))
+            if "hover" not in tags:
+                tree.item(item, tags=(*tags, "hover"))
+        tree._hover_item = item
+
+    def on_tree_leave(self, event):
+        tree = event.widget
+        previous = getattr(tree, "_hover_item", "")
+        if previous and tree.exists(previous):
+            tags = tuple(
+                tag for tag in tree.item(previous, "tags") if tag != "hover"
+            )
+            tree.item(previous, tags=tags)
+        tree._hover_item = ""
 
     def filter_characters(self, event=None):
         if event and event.keysym in ("Down", "Up", "Return", "Tab"):
             return
         search_text = self.character_combo.get().strip().lower()
-        if search_text == self.CHARACTER_DEFAULT_SELECTION.lower():
+        if search_text in (
+            self.CHARACTER_DEFAULT_SELECTION.lower(),
+            self.CHARACTER_PLACEHOLDER.lower(),
+        ):
             search_text = ""
         if hasattr(self, "_character_filter_job"):
             self.root.after_cancel(self._character_filter_job)
@@ -593,12 +800,42 @@ class EventViewer:
         self.event_combo.set(self.EVENT_DEFAULT_SELECTION)
         self.clear_event_display()
 
+    def resolve_event_folder(self, selected_folder):
+        """兼容选择游戏根目录、config 目录或 rite 目录。"""
+        candidates = [
+            selected_folder,
+            os.path.join(selected_folder, "rite"),
+            os.path.join(selected_folder, "config", "rite"),
+            os.path.join(
+                selected_folder,
+                "Sultan's Game_Data",
+                "StreamingAssets",
+                "config",
+                "rite",
+            ),
+        ]
+        for candidate in candidates:
+            if os.path.isdir(candidate) and glob.glob(os.path.join(candidate, "*.json")):
+                return candidate
+        return selected_folder
+
     def browse_folder(self):
-        folder = tk.filedialog.askdirectory()
+        folder = filedialog.askdirectory(title="选择游戏目录或 rite 目录")
         if folder:
-            self.folder_path.set(folder)
+            self.selected_game_directory = folder
+            self.custom_data_folder = self.resolve_event_folder(folder)
+            self.data_source_var.set("自定义目录")
+            self.folder_path.set(f"（自定义目录）{folder}")
             self.load_event_files()
     
+    def reset_to_bundled_data(self):
+        """清除自定义目录并立即重新加载程序内置数据。"""
+        self.custom_data_folder = None
+        self.selected_game_directory = None
+        self.data_source_var.set("内置数据")
+        self.folder_path.set("（内置数据）")
+        self.load_event_files()
+
     def filter_events(self, event=None):
         """根据输入过滤当前人物范围内的事件列表。"""
         if event and event.keysym in ("Down", "Up", "Return", "Tab"):
@@ -664,10 +901,68 @@ class EventViewer:
         
         return comments
     
+    def player_name_segments(self, text):
+        """拆分玩家名占位符，并仅在紧邻文字时补半角空格。"""
+        placeholder = "[player.name]"
+        player_name = self.player_name.get().strip() or "阿尔图"
+        segments = []
+        cursor = 0
+
+        while True:
+            index = text.find(placeholder, cursor)
+            if index < 0:
+                if cursor < len(text):
+                    segments.append((text[cursor:], False))
+                break
+
+            if index > cursor:
+                segments.append((text[cursor:index], False))
+            if index > 0 and text[index - 1].isalnum():
+                segments.append((" ", False))
+
+            segments.append((player_name, True))
+            end = index + len(placeholder)
+            if end < len(text) and text[end].isalnum():
+                segments.append((" ", False))
+            cursor = end
+
+        return segments
+
+    def replace_player_name(self, text):
+        return "".join(content for content, _ in self.player_name_segments(text))
+
+    def insert_player_text(self, widget, text, default_tag=None):
+        for content, is_player_name in self.player_name_segments(text):
+            if is_player_name:
+                tags = (default_tag, "player_name") if default_tag else "player_name"
+            else:
+                tags = default_tag
+            if tags:
+                widget.insert(tk.END, content, tags)
+            else:
+                widget.insert(tk.END, content)
+
+    def set_player_text_content(self, widget, text):
+        widget.config(state=tk.NORMAL)
+        widget.delete(1.0, tk.END)
+        self.insert_player_text(widget, text)
+        widget.config(state=tk.DISABLED)
+
     def on_player_name_change(self, *args):
-        """当玩家名称改变时，更新显示的文本"""
+        """玩家名称改变后刷新当前可见的事件文本。"""
+        if self.current_event:
+            event_data = self.event_data[self.current_event]
+            description = event_data.get("text") or "当前事件没有事件说明"
+            self.set_player_text_content(self.event_desc_text, description)
+
         if self.current_settlement:
             self.display_result_text(self.current_settlement)
+        elif self.current_detail and self.current_detail[0] == "group":
+            self.display_group_results(self.current_detail[1])
+        elif self.current_detail and self.current_detail[0] == "random":
+            self.display_random_text(
+                self.current_detail[1], self.current_detail[2]
+            )
     
     def format_condition(self, condition, comments=None):
         """格式化条件为可读文本，可选添加注释"""
@@ -693,17 +988,27 @@ class EventViewer:
         return condition_str
     
     def load_event_files(self):
-        # 获取程序所在目录
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        
-        # 设置默认文件夹为当前目录下的rite文件夹
-        default_folder = os.path.join(current_dir, "rite")
-        
-        # 只有在路径为空或仍是初始提示语时才使用默认路径
-        folder = self.folder_path.get()
-        if not folder or "如果官方有更新" in folder:
-            self.folder_path.set(default_folder)
-            folder = default_folder
+        using_bundled_data = self.custom_data_folder is None
+        source_name = "内置数据" if using_bundled_data else "自定义目录"
+        if using_bundled_data:
+            folder = os.path.join(os.path.dirname(os.path.abspath(__file__)), "rite")
+            self.data_source_var.set("内置数据")
+            self.folder_path.set("（内置数据）")
+        else:
+            folder = self.custom_data_folder
+            self.data_source_var.set("自定义目录")
+            visible_folder = self.selected_game_directory or folder
+            self.folder_path.set(f"（自定义目录）{visible_folder}")
+
+        if not os.path.isdir(folder):
+            message = "未找到事件数据，请确认游戏目录是否正确"
+            self.set_status(f"加载失败：{message}")
+            self.show_message("加载失败", message, kind="error")
+            return
+
+        self.load_button.config(state=tk.DISABLED)
+        self.reset_button.config(state=tk.DISABLED)
+        self.set_status(f"正在加载{source_name}...")
         self.event_files = []
         self.event_data = {}
         self.comments_data = {}
@@ -713,6 +1018,7 @@ class EventViewer:
         self.clear_event_display()
         
         try:
+            load_errors = []
             # 查找所有json文件
             json_files = glob.glob(os.path.join(folder, "*.json"))
             
@@ -745,11 +1051,11 @@ class EventViewer:
                                     int(card_id)
                                     for card_id in re.findall(r"(?<!\d)2\d{6}(?!\d)", content_no_comments)
                                 }
-                        except json.JSONDecodeError as je:
-                            print(f"JSON解析错误: {file_path}, 错误: {je}")
+                        except json.JSONDecodeError as error:
+                            load_errors.append(f"{os.path.basename(file_path)}：{error}")
                             
-                except Exception as e:
-                    print(f"加载文件出错: {file_path}, 错误: {e}")
+                except Exception as error:
+                    load_errors.append(f"{os.path.basename(file_path)}：{error}")
             
             # 更新事件下拉列表
             event_names = []
@@ -772,12 +1078,28 @@ class EventViewer:
             self.event_combo.set(self.EVENT_DEFAULT_SELECTION)
             
             if event_names:
-                self.show_message("提示", f"成功加载了 {len(self.event_files)} 个事件文件")
+                self.show_empty_state(self.NO_EVENT_TEXT)
+                status = (
+                    f"已加载{source_name}：{len(self.characters)} 个角色 / "
+                    f"{len(event_names)} 个事件"
+                )
+                if load_errors:
+                    status += f"（{len(load_errors)} 个文件读取失败）"
+                self.set_status(status)
             else:
-                self.show_message("提示", "没有找到有效的事件文件")
-                
-        except Exception as e:
-            self.show_message("错误", f"加载事件文件时出错: {e}", kind="error")
+                message = "未找到事件数据，请确认游戏目录是否正确"
+                self.set_status(f"加载失败：{message}")
+                self.show_empty_state("未加载到有效事件")
+                self.show_message("加载失败", message, kind="error")
+
+        except Exception as error:
+            message = f"读取事件文件时出错：{error}"
+            self.set_status(f"加载失败：{message}")
+            self.show_empty_state("数据加载失败")
+            self.show_message("加载失败", message, kind="error")
+        finally:
+            self.load_button.config(state=tk.NORMAL)
+            self.reset_button.config(state=tk.NORMAL)
     
     def on_event_selected(self, event):
         """当从下拉列表选择事件时调用"""
@@ -792,9 +1114,15 @@ class EventViewer:
         event_data = self.event_data[file_path]
         self.current_event = file_path
         self.current_settlement = None
-        self.set_text_content(self.event_desc_text, event_data.get("text", ""))
-        self.set_text_content(self.result_text)
-        self.result_title_var.set("")
+        self.current_detail = None
+        description = event_data.get("text") or "当前事件没有事件说明"
+        self.set_player_text_content(self.event_desc_text, description)
+        self.result_title_var.set("原始脚本")
+        self.set_text_content(
+            self.result_text,
+            json.dumps(event_data, ensure_ascii=False, indent=2),
+            "content",
+        )
         self.update_condition_lists()
     
     def update_condition_lists(self):
@@ -881,23 +1209,31 @@ class EventViewer:
                     if len(random_text["text"]) > 100:
                         display_text += "..."
                     self.settlement_tree.insert("", "end", values=(f"random_{key}", display_text))
-        
+
+        if not self.slot_tree.get_children():
+            self.slot_tree.insert(
+                "", "end", values=("", "当前事件无触发条件"), tags=("empty",)
+            )
+        if not self.settlement_tree.get_children():
+            self.settlement_tree.insert(
+                "", "end", values=("", "当前事件无结算条件"), tags=("empty",)
+            )
+
     def display_result_text(self, settlement):
         """显示结果文本，替换玩家名称并添加注释"""
         self.result_text.config(state=tk.NORMAL)
         # 保存当前settlement以便名称变更时更新
         self.current_settlement = settlement
-        
+        self.current_detail = None
+
         # 显示结果标题
         title = settlement.get("result_title", "无标题")
         self.result_title_var.set(title)
         
         # 显示结果文本，替换玩家名称
         result_text = settlement.get("result_text", "无结果文本")
-        player_name = self.player_name.get() if self.player_name.get() else "玩家"
-        result_text = result_text.replace("[player.name]", player_name)
         self.result_text.delete(1.0, tk.END)
-        self.result_text.insert(tk.END, result_text)  
+        self.insert_player_text(self.result_text, result_text, "content")
         
         # 获取结果文本末尾注释
         comments = self.comments_data.get(self.current_event, {})
@@ -1192,7 +1528,8 @@ class EventViewer:
             return
         
         target_group = list(condition_groups.values())[group_index]
-        
+        self.current_settlement = None
+        self.current_detail = ("group", group_index)
 
         self.result_title_var.set("结果文本")
         self.result_text.config(state=tk.NORMAL)
@@ -1207,15 +1544,12 @@ class EventViewer:
             title = item.get("result_title", "")
             text = item.get("result_text", "")
             
-            # 替换玩家名称
-            player_name = self.player_name.get() if self.player_name.get() else "玩家"
-            text = text.replace("[player.name]", player_name)
-            
             # 不再显示标记，直接显示标题和文本
             if title:
                 self.result_text.insert(tk.END, f"{title}\n", "title")
             
-            self.result_text.insert(tk.END, f"{text}\n\n", "content")
+            self.insert_player_text(self.result_text, text, "content")
+            self.result_text.insert(tk.END, "\n\n", "content")
             
             # 显示条件详情
             condition = json.loads(list(condition_groups.keys())[group_index])
@@ -1263,6 +1597,8 @@ class EventViewer:
             
     def display_random_text(self, random_text, key):
         """显示随机文本信息"""
+        self.current_settlement = None
+        self.current_detail = ("random", random_text, key)
         self.result_title_var.set(f"随机文本 {key}")
         self.result_text.config(state=tk.NORMAL)
         
@@ -1273,9 +1609,8 @@ class EventViewer:
             # 随机文本是字典形式
             if "text" in random_text:
                 text = random_text["text"]
-                player_name = self.player_name.get() if self.player_name.get() else "玩家"
-                text = text.replace("[player.name]", player_name)
-                self.result_text.insert(tk.END, text + "\n\n", "content")
+                self.insert_player_text(self.result_text, text, "content")
+                self.result_text.insert(tk.END, "\n\n", "content")
             
             # 显示其他属性
             for k, v in random_text.items():
@@ -1291,15 +1626,6 @@ if __name__ == "__main__":
         root = tk.Tk()
         root.title("苏丹的游戏 - 事件分支查看器")
             
-        # 设置窗口尺寸和位置
-        screen_width = root.winfo_screenwidth()
-        screen_height = root.winfo_screenheight()
-        window_width = 1200
-        window_height = 800
-        x = (screen_width - window_width) // 2
-        y = (screen_height - window_height) // 2
-        root.geometry(f"{window_width}x{window_height}+{x}+{y}")
-        
         app = EventViewer(root)
         root.mainloop()
     except Exception as e:
