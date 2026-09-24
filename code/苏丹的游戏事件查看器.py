@@ -8,7 +8,7 @@ Created on Wed Apr  2 19:49:39 2025
 import os
 import json
 import tkinter as tk
-from tkinter import ttk, messagebox, scrolledtext, filedialog
+from tkinter import ttk, messagebox, scrolledtext, filedialog, font as tkfont
 import glob
 import re
 import copy
@@ -23,8 +23,13 @@ class EventViewer:
         self.root.geometry("1200x800")
         self.root.minsize(1000, 700)
         
-        # 设置中文字体
-        self.font = ('Microsoft YaHei UI', 10)
+        # 全局排版：11pt 在 96 DPI 下约为 14.7px，不低于 12px。
+        self.font_family = "Microsoft YaHei UI" if os.name == "nt" else tkfont.nametofont("TkDefaultFont").actual("family")
+        self.font = (self.font_family, 11)
+        self.heading_font = (self.font_family, 11, "bold")
+        self.title_font = (self.font_family, 13, "bold")
+        self.dialog_icon_font = (self.font_family, 22, "bold")
+        self.configure_global_fonts()
         
         # 数据
         self.event_files = []
@@ -40,79 +45,219 @@ class EventViewer:
         self.characters = copy.deepcopy(self.default_characters)
         self.character_display_map = {}
         
-        # 设置暗黑主题
-        self.set_dark_theme()
-        
+        # 跟随系统的应用主题
+        self.system_dark_mode = self.is_system_dark_mode()
+        self.colors = self.apply_theme(self.system_dark_mode)
+
         # 创建UI
         self.create_ui()
-        
+        self.apply_theme(self.system_dark_mode)
+
         # 加载数据
         self.load_event_files()
-    
-    def set_dark_theme(self):
-        """设置暗黑主题颜色"""
-        # 基础颜色
-        bg_color = "#1e1e1e"        # 背景色
-        fg_color = "#d4d4d4"         # 前景色（文字）
-        select_bg = "#264f78"        # 选中背景
-        select_fg = "#ffffff"        # 选中前景
-        input_bg = "#3c3c3c"         # 输入框背景
-        border_color = "#555555"     # 边框颜色
-        
-        # 配置ttk样式
-        style = ttk.Style()
-        
-        # 尝试使用暗黑主题
+        if os.name == "nt":
+            self.root.after(2000, self.check_system_theme)
+
+    def configure_global_fonts(self):
+        """统一 Tk/ttk 和传统 Tk 控件使用的命名字体。"""
+        for font_name in (
+            "TkDefaultFont",
+            "TkTextFont",
+            "TkMenuFont",
+            "TkCaptionFont",
+            "TkSmallCaptionFont",
+            "TkIconFont",
+            "TkTooltipFont",
+        ):
+            try:
+                tkfont.nametofont(font_name).configure(family=self.font_family, size=11)
+            except tk.TclError:
+                pass
         try:
-            style.theme_use("clam")  # 使用可定制性高的主题作为基础
-        except:
+            tkfont.nametofont("TkHeadingFont").configure(
+                family=self.font_family,
+                size=11,
+                weight="bold",
+            )
+        except tk.TclError:
             pass
-        
-        # 配置各种元素的样式
+        self.root.option_add("*Font", self.font)
+
+    def is_system_dark_mode(self):
+        """读取 Windows 当前的应用主题；其他平台默认使用亮色。"""
+        if os.name != "nt":
+            return False
+        try:
+            import winreg
+            registry_path = r"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize"
+            with winreg.OpenKey(winreg.HKEY_CURRENT_USER, registry_path) as key:
+                apps_use_light_theme, _ = winreg.QueryValueEx(key, "AppsUseLightTheme")
+            return apps_use_light_theme == 0
+        except OSError:
+            return getattr(self, "system_dark_mode", False)
+
+    def apply_theme(self, dark_mode):
+        """根据系统模式配置 ttk 和文本控件颜色。"""
+        if dark_mode:
+            colors = {
+                "bg": "#1e1e1e",
+                "fg": "#d4d4d4",
+                "select_bg": "#264f78",
+                "select_fg": "#ffffff",
+                "input_bg": "#3c3c3c",
+                "border": "#555555",
+                "comment": "#6a9955",
+                "info": "#75b7ff",
+                "error": "#ff6b6b",
+            }
+        else:
+            colors = {
+                "bg": "#f0f0f0",
+                "fg": "#202020",
+                "select_bg": "#0078d4",
+                "select_fg": "#ffffff",
+                "input_bg": "#ffffff",
+                "border": "#a0a0a0",
+                "comment": "#008000",
+                "info": "#0067c0",
+                "error": "#c42b1c",
+            }
+
+        bg_color = colors["bg"]
+        fg_color = colors["fg"]
+        select_bg = colors["select_bg"]
+        select_fg = colors["select_fg"]
+        input_bg = colors["input_bg"]
+        border_color = colors["border"]
+
+        style = ttk.Style()
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+
         style.configure("TFrame", background=bg_color)
         style.configure("TLabel", background=bg_color, foreground=fg_color, font=self.font)
-        style.configure("TButton", background=input_bg, foreground=fg_color, font=self.font)
-        style.configure("TEntry", fieldbackground=input_bg, foreground=fg_color, font=self.font)
-        style.configure("TCombobox", background=input_bg, fieldbackground=input_bg, foreground=fg_color, font=self.font)
+        style.configure("TButton", background=input_bg, foreground=fg_color, font=self.font, padding=(16, 4))
+        style.map("TButton", background=[("active", select_bg)], foreground=[("active", select_fg)])
+        style.configure("TEntry", fieldbackground=input_bg, foreground=fg_color, font=self.font, padding=(8, 5))
+        style.configure("TCombobox", background=input_bg, fieldbackground=input_bg, foreground=fg_color, font=self.font, padding=(8, 5))
         style.map("TCombobox", fieldbackground=[("readonly", input_bg)], foreground=[("readonly", fg_color)])
-        
-        # 树形视图样式
-        style.configure("Treeview", 
-                        background=bg_color, 
-                        foreground=fg_color, 
-                        fieldbackground=bg_color, 
-                        font=self.font)
-        style.configure("Treeview.Heading", 
-                        background=input_bg, 
-                        foreground=fg_color, 
-                        font=self.font)
-        style.map("Treeview", 
-                 background=[("selected", select_bg)],
-                 foreground=[("selected", select_fg)])
-        
-        # LabelFrame样式
+
+        style.configure("Treeview",
+                        background=input_bg,
+                        foreground=fg_color,
+                        fieldbackground=input_bg,
+                        font=self.font,
+                        rowheight=32)
+        style.configure("Treeview.Heading",
+                        background=input_bg,
+                        foreground=fg_color,
+                        font=self.heading_font,
+                        padding=(8, 5))
+        style.map("Treeview",
+                  background=[("selected", select_bg)],
+                  foreground=[("selected", select_fg)])
+
         style.configure("TLabelframe", background=bg_color, foreground=fg_color)
         style.configure("TLabelframe.Label", background=bg_color, foreground=fg_color, font=self.font)
-        
-        # 滚动条样式
-        style.configure("TScrollbar", background=input_bg, troughcolor=bg_color, bordercolor=border_color)
-        
-        # 设置根窗口颜色
+        style.configure(
+            "TScrollbar",
+            background=input_bg,
+            troughcolor=bg_color,
+            bordercolor=border_color,
+            arrowcolor=fg_color,
+            lightcolor=input_bg,
+            darkcolor=input_bg,
+        )
+        style.map("TScrollbar", background=[("active", select_bg)])
+
         self.root.configure(background=bg_color)
-        
-        # 返回颜色以供其他部分使用
-        return {
-            "bg": bg_color,
-            "fg": fg_color,
-            "select_bg": select_bg,
-            "select_fg": select_fg,
-            "input_bg": input_bg,
-            "border": border_color
-        }
-        
+        self.root.option_add("*TCombobox*Listbox.background", input_bg)
+        self.root.option_add("*TCombobox*Listbox.foreground", fg_color)
+        self.root.option_add("*TCombobox*Listbox.selectBackground", select_bg)
+        self.root.option_add("*TCombobox*Listbox.selectForeground", select_fg)
+        self.root.option_add("*TCombobox*Listbox.font", self.font)
+
+        for attribute in ("event_desc_text", "result_text"):
+            if hasattr(self, attribute):
+                widget = getattr(self, attribute)
+                widget.config(
+                    bg=input_bg,
+                    fg=fg_color,
+                    insertbackground=fg_color,
+                    selectbackground=select_bg,
+                    selectforeground=select_fg,
+                    highlightbackground=border_color,
+                    highlightcolor=select_bg,
+                )
+                widget.vbar.config(
+                    background=input_bg,
+                    troughcolor=bg_color,
+                    activebackground=select_bg,
+                    borderwidth=0,
+                    highlightthickness=0,
+                    relief=tk.FLAT,
+                )
+        if hasattr(self, "result_text"):
+            self.result_text.tag_configure("comment", foreground=colors["comment"])
+
+        self.colors = colors
+        return colors
+
+    def check_system_theme(self):
+        """运行期间检测 Windows 主题变化。"""
+        dark_mode = self.is_system_dark_mode()
+        if dark_mode != self.system_dark_mode:
+            self.system_dark_mode = dark_mode
+            self.apply_theme(dark_mode)
+        self.root.after(2000, self.check_system_theme)
+
+    def show_message(self, title, message, kind="info"):
+        """显示与主界面主题一致的模态消息窗口。"""
+        dialog = tk.Toplevel(self.root)
+        dialog.withdraw()
+        dialog.title(title)
+        dialog.transient(self.root)
+        dialog.resizable(False, False)
+        dialog.configure(background=self.colors["bg"])
+
+        body = ttk.Frame(dialog, padding=(24, 20, 24, 14))
+        body.pack(fill=tk.BOTH, expand=True)
+        icon = "⚠" if kind == "error" else "ⓘ"
+        icon_color = self.colors["error"] if kind == "error" else self.colors["info"]
+        tk.Label(
+            body,
+            text=icon,
+            background=self.colors["bg"],
+            foreground=icon_color,
+            font=self.dialog_icon_font,
+        ).grid(row=0, column=0, padx=(0, 16), sticky="n")
+        ttk.Label(body, text=message, font=self.font, wraplength=480, justify=tk.LEFT).grid(
+            row=0,
+            column=1,
+            sticky="w",
+        )
+
+        button_frame = ttk.Frame(dialog, padding=(24, 0, 24, 18))
+        button_frame.pack(fill=tk.X)
+        close_button = ttk.Button(button_frame, text="确定", width=12, command=dialog.destroy)
+        close_button.pack(side=tk.RIGHT)
+
+        dialog.protocol("WM_DELETE_WINDOW", dialog.destroy)
+        dialog.bind("<Return>", lambda event: dialog.destroy())
+        dialog.bind("<Escape>", lambda event: dialog.destroy())
+        dialog.update_idletasks()
+        x = self.root.winfo_rootx() + (self.root.winfo_width() - dialog.winfo_reqwidth()) // 2
+        y = self.root.winfo_rooty() + (self.root.winfo_height() - dialog.winfo_reqheight()) // 2
+        dialog.geometry(f"+{max(0, x)}+{max(0, y)}")
+        dialog.deiconify()
+        dialog.grab_set()
+        close_button.focus_set()
+        self.root.wait_window(dialog)
+
     def create_ui(self):
-        # 获取颜色方案
-        colors = self.set_dark_theme()
+        colors = self.colors
         
         # 创建主框架 - 去掉边框
         main_frame = ttk.Frame(self.root, padding="10")
@@ -176,7 +321,14 @@ class EventViewer:
         self.event_desc_text = scrolledtext.ScrolledText(description_frame, wrap=tk.WORD, font=self.font, height=3)
         self.event_desc_text.pack(fill=tk.X, expand=True)
         # 设置文本颜色
-        self.event_desc_text.config(bg=colors["bg"], fg=colors["fg"], insertbackground=colors["fg"], state=tk.DISABLED)
+        self.event_desc_text.config(
+            bg=colors["input_bg"],
+            fg=colors["fg"],
+            insertbackground=colors["fg"],
+            selectbackground=colors["select_bg"],
+            selectforeground=colors["select_fg"],
+            state=tk.DISABLED,
+        )
         
         # 创建中间区域 - 分为左右两列
         middle_frame = ttk.Frame(main_frame)
@@ -234,18 +386,25 @@ class EventViewer:
                 
         # 结果标题
         self.result_title_var = tk.StringVar()
-        title_label = ttk.Label(result_frame, textvariable=self.result_title_var, font=('Microsoft YaHei UI', 12, 'bold'))
+        title_label = ttk.Label(result_frame, textvariable=self.result_title_var, font=self.title_font)
         title_label.pack(anchor=tk.W, pady=(0, 10))
         
         # 结果文本
         self.result_text = scrolledtext.ScrolledText(result_frame, wrap=tk.WORD, font=self.font)
         self.result_text.pack(fill=tk.BOTH, expand=True)
         # 设置文本颜色
-        self.result_text.config(bg=colors["bg"], fg=colors["fg"], insertbackground=colors["fg"], state=tk.DISABLED)
+        self.result_text.config(
+            bg=colors["input_bg"],
+            fg=colors["fg"],
+            insertbackground=colors["fg"],
+            selectbackground=colors["select_bg"],
+            selectforeground=colors["select_fg"],
+            state=tk.DISABLED,
+        )
         # 配置标签样式
-        self.result_text.tag_configure("title", font=("Microsoft YaHei UI", 12, "bold"))
-        self.result_text.tag_configure("content", font=("Microsoft YaHei UI", 10))
-        self.result_text.tag_configure("comment", font=("Microsoft YaHei UI", 10, "italic"), foreground="#6a9955")
+        self.result_text.tag_configure("title", font=self.title_font)
+        self.result_text.tag_configure("content", font=self.font)
+        self.result_text.tag_configure("comment", font=(self.font_family, 11, "italic"), foreground=colors["comment"])
         
     def load_default_characters(self):
         """加载随程序提供的人工校正人物元数据。"""
@@ -613,12 +772,12 @@ class EventViewer:
             self.event_combo.set(self.EVENT_DEFAULT_SELECTION)
             
             if event_names:
-                messagebox.showinfo("提示", f"成功加载了 {len(self.event_files)} 个事件文件")
+                self.show_message("提示", f"成功加载了 {len(self.event_files)} 个事件文件")
             else:
-                messagebox.showinfo("提示", "没有找到有效的事件文件")
+                self.show_message("提示", "没有找到有效的事件文件")
                 
         except Exception as e:
-            messagebox.showerror("错误", f"加载事件文件时出错: {e}")
+            self.show_message("错误", f"加载事件文件时出错: {e}", kind="error")
     
     def on_event_selected(self, event):
         """当从下拉列表选择事件时调用"""
