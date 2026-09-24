@@ -5,12 +5,16 @@ import PyInstaller.config
 # 输出 exe 到 spec 文件所在目录的上级（即主文件夹），build 缓存留在 code/ 下
 PyInstaller.config.CONF['distpath'] = os.path.join(SPECPATH, '..')
 PyInstaller.config.CONF['workpath'] = os.path.join(SPECPATH, 'build')
+os.makedirs(PyInstaller.config.CONF['workpath'], exist_ok=True)
 
 a = Analysis(
     [os.path.join(SPECPATH, '苏丹的游戏事件查看器.py')],
     pathex=[SPECPATH],
     binaries=[],
-    datas=[(os.path.join(SPECPATH, 'rite'), 'rite')],
+    datas=[
+        (os.path.join(SPECPATH, 'rite'), 'rite'),
+        (os.path.join(SPECPATH, 'character'), 'character'),
+    ],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -30,7 +34,7 @@ exe = EXE(
     name='苏丹的游戏事件查看器(GitHub：AC-HUB-AC)',
     debug=False,
     bootloader_ignore_signals=False,
-    strip=True,
+    strip=False,
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
