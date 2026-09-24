@@ -13,6 +13,13 @@ import glob
 import re
 import copy
 
+from event_utils import (
+    group_settlements,
+    player_name_segments as split_player_name_segments,
+    resolve_event_folder as find_event_folder,
+    strip_json_comments,
+)
+
 class EventViewer:
     CHARACTER_DEFAULT_SELECTION = "所有人"
     CHARACTER_PLACEHOLDER = "输入角色ID、名称、别称、或关键词"
@@ -586,33 +593,7 @@ class EventViewer:
 
     def strip_json_comments(self, content):
         """移除字符串外的 // 注释，并清理尾随逗号。"""
-        result = []
-        index = 0
-        in_string = False
-        escaped = False
-        while index < len(content):
-            char = content[index]
-            if in_string:
-                result.append(char)
-                if escaped:
-                    escaped = False
-                elif char == "\\":
-                    escaped = True
-                elif char == '"':
-                    in_string = False
-                index += 1
-            elif char == '"':
-                in_string = True
-                result.append(char)
-                index += 1
-            elif char == "/" and index + 1 < len(content) and content[index + 1] == "/":
-                index += 2
-                while index < len(content) and content[index] not in "\r\n":
-                    index += 1
-            else:
-                result.append(char)
-                index += 1
-        return re.sub(r",\s*([}\]])", r"\1", "".join(result))
+        return strip_json_comments(content)
 
     def update_characters_from_cards(self, rite_folder):
         """用 rite 同级的 cards.json 更新运行时人物列表，不写入硬盘。"""
@@ -804,22 +785,7 @@ class EventViewer:
 
     def resolve_event_folder(self, selected_folder):
         """兼容选择游戏根目录、config 目录或 rite 目录。"""
-        candidates = [
-            selected_folder,
-            os.path.join(selected_folder, "rite"),
-            os.path.join(selected_folder, "config", "rite"),
-            os.path.join(
-                selected_folder,
-                "Sultan's Game_Data",
-                "StreamingAssets",
-                "config",
-                "rite",
-            ),
-        ]
-        for candidate in candidates:
-            if os.path.isdir(candidate) and glob.glob(os.path.join(candidate, "*.json")):
-                return candidate
-        return selected_folder
+        return find_event_folder(selected_folder)
 
     def browse_folder(self):
         folder = filedialog.askdirectory(title="选择游戏目录或 rite 目录")
@@ -905,30 +871,8 @@ class EventViewer:
     
     def player_name_segments(self, text):
         """拆分玩家名占位符，并仅在紧邻文字时补半角空格。"""
-        placeholder = "[player.name]"
         player_name = self.player_name.get().strip() or "阿尔图"
-        segments = []
-        cursor = 0
-
-        while True:
-            index = text.find(placeholder, cursor)
-            if index < 0:
-                if cursor < len(text):
-                    segments.append((text[cursor:], False))
-                break
-
-            if index > cursor:
-                segments.append((text[cursor:index], False))
-            if index > 0 and text[index - 1].isalnum():
-                segments.append((" ", False))
-
-            segments.append((player_name, True))
-            end = index + len(placeholder)
-            if end < len(text) and text[end].isalnum():
-                segments.append((" ", False))
-            cursor = end
-
-        return segments
+        return split_player_name_segments(text, player_name)
 
     def replace_player_name(self, text):
         return "".join(content for content, _ in self.player_name_segments(text))
@@ -1013,15 +957,15 @@ class EventViewer:
         self.load_button.config(state=tk.DISABLED)
         self.reset_button.config(state=tk.DISABLED)
         self.set_status(f"正在加载{source_name}...")
-        self.event_files = []
-        self.event_data = {}
-        self.comments_data = {}
-        self.event_card_ids = {}
-        self.event_name_to_file = {}
-        self.update_characters_from_cards(folder)
-        self.clear_event_display()
-        
         try:
+            self.event_files = []
+            self.event_data = {}
+            self.comments_data = {}
+            self.event_card_ids = {}
+            self.event_name_to_file = {}
+            self.update_characters_from_cards(folder)
+            self.clear_event_display()
+
             load_errors = []
             # 查找所有json文件
             json_files = glob.glob(os.path.join(folder, "*.json"))
@@ -1034,15 +978,8 @@ class EventViewer:
                         # 提取注释信息
                         self.comments_data[file_path] = self.extract_comments(content)
                         
-                        # 尝试修复常见的JSON错误
-                        # 1. 移除//类型的注释，但先保存它们以便后续显示
-                        content_no_comments = re.sub(r'//.*', '', content)
-                        
-                        # 2. 末尾多余的逗号问题
-                        content_no_comments = re.sub(r',\s*([}\]])', r'\1', content_no_comments)
-                        
-                        # 3. 清理剩余可能导致问题的格式
-                        content_no_comments = re.sub(r'(?m)^\s*//.*$', '', content_no_comments)  # 删除整行注释
+                        # 清理字符串外的 // 注释及尾随逗号。
+                        content_no_comments = strip_json_comments(content)
                         
                         try:
                             # 尝试使用标准JSON解析
@@ -1155,35 +1092,8 @@ class EventViewer:
                     display_text = full_text[:200] + "..." if len(full_text) > 200 else full_text
                     self.slot_tree.insert("", "end", values=(f"s{slot_key}", display_text))
         
-        # 整理settlement条件 - 按条件归类
-        condition_groups = {}
-        
-        # 处理settlement
-        if "settlement" in event_data:
-            for i, settlement in enumerate(event_data["settlement"]):
-                if "condition" in settlement:
-                    condition_key = json.dumps(settlement["condition"], sort_keys=True)
-                    if condition_key not in condition_groups:
-                        condition_groups[condition_key] = []
-                    condition_groups[condition_key].append(("settlement", i, settlement))
-        
-        # 处理settlement_prior
-        if "settlement_prior" in event_data:
-            for i, settlement in enumerate(event_data["settlement_prior"]):
-                if "condition" in settlement:
-                    condition_key = json.dumps(settlement["condition"], sort_keys=True)
-                    if condition_key not in condition_groups:
-                        condition_groups[condition_key] = []
-                    condition_groups[condition_key].append(("prior", i, settlement))
-        
-        # 处理settlement_extre
-        if "settlement_extre" in event_data:
-            for i, settlement in enumerate(event_data["settlement_extre"]):
-                if "condition" in settlement:
-                    condition_key = json.dumps(settlement["condition"], sort_keys=True)
-                    if condition_key not in condition_groups:
-                        condition_groups[condition_key] = []
-                    condition_groups[condition_key].append(("extre", i, settlement))
+        # 整理 settlement 条件并按条件归类。
+        condition_groups = group_settlements(event_data)
         
         # 添加分组后的条件到树中
         group_index = 0
@@ -1497,35 +1407,7 @@ class EventViewer:
         
         event_data = self.event_data[self.current_event]
         
-        # 重建条件组
-        condition_groups = {}
-        
-        # 处理settlement
-        if "settlement" in event_data:
-            for i, settlement in enumerate(event_data["settlement"]):
-                if "condition" in settlement:
-                    condition_key = json.dumps(settlement["condition"], sort_keys=True)
-                    if condition_key not in condition_groups:
-                        condition_groups[condition_key] = []
-                    condition_groups[condition_key].append(("settlement", i, settlement))
-        
-        # 处理settlement_prior
-        if "settlement_prior" in event_data:
-            for i, settlement in enumerate(event_data["settlement_prior"]):
-                if "condition" in settlement:
-                    condition_key = json.dumps(settlement["condition"], sort_keys=True)
-                    if condition_key not in condition_groups:
-                        condition_groups[condition_key] = []
-                    condition_groups[condition_key].append(("prior", i, settlement))
-        
-        # 处理settlement_extre
-        if "settlement_extre" in event_data:
-            for i, settlement in enumerate(event_data["settlement_extre"]):
-                if "condition" in settlement:
-                    condition_key = json.dumps(settlement["condition"], sort_keys=True)
-                    if condition_key not in condition_groups:
-                        condition_groups[condition_key] = []
-                    condition_groups[condition_key].append(("extre", i, settlement))
+        condition_groups = group_settlements(event_data)
         
         # 获取指定组索引的组
         if len(condition_groups) <= group_index:
