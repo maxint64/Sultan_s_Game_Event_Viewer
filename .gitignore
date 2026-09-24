@@ -1,0 +1,8 @@
+# PyInstaller 中间文件和本地历史构建
+/build/
+code/build/
+releases/backup/
+
+# Python 字节码缓存
+__pycache__/
+*.py[cod]

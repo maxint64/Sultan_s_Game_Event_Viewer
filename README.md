@@ -71,6 +71,16 @@ uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfir
 
 构建完成后，exe 会输出到项目根目录；中间文件位于 `code/build/`。
 
+如果项目根目录已经存在同名 exe，构建脚本会先将旧文件复制到
+`releases/backup/`，并在文件名末尾添加构建时间，例如：
+
+```text
+苏丹的游戏事件查看器(GitHub：AC-HUB-AC)_20260925-120000-123.exe
+```
+
+备份成功后才会继续生成新版 exe；同一毫秒内重复构建时还会自动添加数字后缀，
+不会覆盖已有备份。
+
 ## 常见问题
 
 ### Windows 阻止运行 exe
