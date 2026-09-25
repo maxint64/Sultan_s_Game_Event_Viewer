@@ -1,8 +1,8 @@
-# 【苏丹的游戏】事件分支查看器
+# 《苏丹的游戏》事件分支查看器
 
-一个使用 Python Tkinter 编写的本地事件数据查看工具，用于检索和阅读《苏丹的游戏》的事件说明、触发条件、结算条件与原始脚本。
+一个使用 Python Tkinter 编写的本地事件数据查看工具，用于检索和阅读[《苏丹的游戏》](https://store.steampowered.com/app/3117820/_/)的事件说明、触发条件、结算条件与原始脚本。
 
-※ 本项目基于 [AC-HUB-AC/Sultan_s_Game_Event_Viewer](https://github.com/AC-HUB-AC/Sultan_s_Game_Event_Viewer) 继续开发。感谢原仓库作者及贡献者完成最初版本并开放源代码；后续修改与发布由本仓库维护者负责。若改动具有通用价值，也可能在整理后向上游仓库提交贡献。
+※ 本项目基于 [AC-HUB-AC/Sultan_s_Game_Event_Viewer](https://github.com/AC-HUB-AC/Sultan_s_Game_Event_Viewer) 继续开发。
 
 ## 主要功能
 
@@ -14,25 +14,6 @@
 - 鼠标悬停条件行时高亮；点击条件可在下方查看完整内容。
 - 可设置玩家名称，用于替换事件文本中的 `[player.name]`；替换后的名字会突出显示。
 - 提供加载状态、空状态与错误提示，并自动跟随 Windows 明暗主题。
-
-## 项目结构
-
-```text
-Sultan_s_Game_Event_Viewer/
-├── event_viewer.py                    # 主程序
-├── sultan.ico                         # Windows exe 图标
-├── data/
-│   ├── character/characters.json      # 角色名称、别称和 ID 数据
-│   └── rite/*.json                    # 内置事件数据
-├── conf/
-│   ├── event_viewer.spec              # PyInstaller 构建配置
-│   └── event_viewer_version.txt       # Windows exe 版本资源
-├── .build/                            # 构建缓存，自动生成且不提交
-└── releases/backup/                   # 旧 exe 备份，按需生成且不提交
-```
-
-直接运行源码时，`event_viewer.py` 会从同级的 `data/character/` 和
-`data/rite/` 读取内置数据，因此不要只复制主程序文件单独运行。
 
 ## 使用方法
 
@@ -72,50 +53,28 @@ Steam 中可通过“管理 → 浏览本地文件”找到游戏目录。选择
 
 ## 从源码运行
 
-项目只依赖 Python 标准库中的 Tkinter。建议在 Windows PowerShell 中使用 [uv](https://docs.astral.sh/uv/)：
+从源码运行或构建可执行文件时需使用 [uv](https://docs.astral.sh/uv/getting-started/installation/)。
 
-如果尚未安装 uv，可在 Windows PowerShell 中执行 `winget install --id=astral-sh.uv -e`。
-安装完成后重新打开终端，并运行 `uv --version` 确认命令可用；其他安装方式参见 [uv 官方安装文档](https://docs.astral.sh/uv/getting-started/installation/)。
-
-```powershell
-cd C:\path\to\Sultan_s_Game_Event_Viewer
-uv run --python 3.11 python ".\event_viewer.py"
+```shell
+uv run --python 3.11 python event_viewer.py
 ```
-
-如果系统没有 Tkinter，请安装包含 Tcl/Tk 的完整 Python 3.11。
-
-该命令需要在项目根目录执行。主程序和 `data/` 必须保持上面所示的相对位置。
 
 ## 构建 Windows exe
 
-在项目根目录执行：
+在 Windows 系统中的项目根目录执行：
 
 ```powershell
-uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfirm --distpath "." --workpath ".\.build" ".\conf\event_viewer.spec"
+$env:APP_RELEASE_TAG = "local"
+uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfirm --distpath "." --workpath ".\.build" ".\event_viewer.spec"
 ```
 
-构建完成后，exe 会输出到项目根目录；中间文件位于 `.build/`。
-构建配置读取 `conf/event_viewer_version.txt` 作为 Windows 版本资源，并读取
-项目根目录的 `sultan.ico` 作为 exe 图标。`.build/` 可以随时删除，下次构建会自动重新生成。
-
-如果项目根目录已经存在同名 exe，构建脚本会先将旧文件复制到
-`releases/backup/`，并在文件名末尾添加构建时间，例如：
-
-```text
-苏丹的游戏事件分支查看器_20260925-120000-123.exe
-```
-
-备份成功后才会继续生成新版 exe；同一毫秒内重复构建时还会自动添加数字后缀，
-不会覆盖已有备份。
-
-构建产物不会提交到 Git 仓库。确认程序运行正常后，应创建对应版本的 Git 标签和
-GitHub Release，并将新 exe 作为 Release Asset 上传。
+构建完成后，exe 会以 `苏丹的游戏事件分支查看器_local_build.exe` 的名称输出到项目根目录`。
 
 ## 常见问题
 
 ### Windows 阻止运行 exe
 
-本项目提供的 exe 未进行商业代码签名，Windows 可能显示来源未知或阻止运行。可以先在文件“属性”中检查是否有“解除锁定”选项。若设备启用了不允许单独放行应用的安全策略，建议不要降低系统安全设置，直接按上面的步骤使用 Windows Python 源码运行。
+Windows 可能显示来源未知或阻止运行。可以先在文件“属性”中检查是否有“解除锁定”选项。若设备启用了不允许单独放行应用的安全策略，建议不要降低系统安全设置，直接按上面的步骤使用 Windows Python 源码运行。
 
 ### 加载自定义目录失败
 
