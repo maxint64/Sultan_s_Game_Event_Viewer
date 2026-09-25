@@ -2,7 +2,8 @@
 import os
 
 # 输出目录由构建命令的 --distpath 和 --workpath 显式指定
-BASE_APP_NAME = '苏丹的游戏事件分支查看器'
+# Keep the executable name ASCII-only so it is safe across build and release tools.
+BASE_APP_NAME = 'SultansGameEventViewer'
 RELEASE_TAG = os.environ.get('APP_RELEASE_TAG')
 if not RELEASE_TAG:
     raise ValueError('APP_RELEASE_TAG must be set when building a release.')

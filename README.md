@@ -20,7 +20,7 @@
 ### 下载并运行 exe
 
 前往本仓库的 [GitHub Releases](../../releases)，
-从最新版本的 Assets 中下载 `苏丹的游戏事件分支查看器.exe`，然后双击运行。
+从最新版本的 Assets 中下载 `SultansGameEventViewer_<版本号>.exe`，然后双击运行。
 
 程序启动后会自动加载内置数据：
 
@@ -68,7 +68,7 @@ $env:APP_RELEASE_TAG = "local"
 uv run --python 3.11 --with pyinstaller python -m PyInstaller --clean --noconfirm --distpath "." --workpath ".\.build" ".\event_viewer.spec"
 ```
 
-构建完成后，exe 会以 `苏丹的游戏事件分支查看器_local_build.exe` 的名称输出到项目根目录`。
+构建完成后，exe 会以 `SultansGameEventViewer_local.exe` 的名称输出到项目根目录。
 
 ## 常见问题
 
