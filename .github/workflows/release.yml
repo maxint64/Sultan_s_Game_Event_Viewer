@@ -1,0 +1,64 @@
+name: Build and release Windows executable
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Verify the tag is on main
+        shell: bash
+        run: |
+          git fetch origin main --tags --force
+          tag_commit="$(git rev-list -n 1 "$GITHUB_REF")"
+          git merge-base --is-ancestor "$tag_commit" origin/main || {
+            echo "The tag must point to a commit contained in main."
+            exit 1
+          }
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install PyInstaller
+        run: python -m pip install --disable-pip-version-check pyinstaller
+
+      - name: Build executable
+        env:
+          APP_RELEASE_TAG: ${{ github.ref_name }}
+        run: >-
+          python -m PyInstaller --clean --noconfirm --distpath "."
+          --workpath ".\\.build" ".\\event_viewer.spec"
+
+      - name: Create release and upload executable
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ github.ref_name }}
+        shell: pwsh
+        run: |
+          $executable = ".\苏丹的游戏事件分支查看器_$($env:TAG_NAME).exe"
+          if (-not (Test-Path -LiteralPath $executable -PathType Leaf)) {
+            throw "Expected build output was not found: $executable"
+          }
+
+          if (gh release view $env:TAG_NAME 2>$null) {
+            gh release upload $env:TAG_NAME $executable --clobber
+          }
+          else {
+            gh release create $env:TAG_NAME $executable `
+              --title $env:TAG_NAME `
+              --generate-notes
+          }
