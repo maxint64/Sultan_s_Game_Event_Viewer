@@ -61,7 +61,9 @@ uv run --python 3.11 python event_viewer.py
 
 ## 构建 Windows exe
 
-在 Windows 系统中的项目根目录执行：
+在 Windows 系统中，双击项目根目录的 `build.bat` 即可构建。脚本会使用 `uv` 下载所需的 Python 和 PyInstaller，并在项目根目录生成 exe。
+
+也可以在项目根目录手动执行：
 
 ```powershell
 $env:APP_RELEASE_TAG = "local"
