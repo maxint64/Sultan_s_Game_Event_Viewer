@@ -156,6 +156,9 @@ class EventViewer:
                 "select_fg": "#ffffff",
                 "input_bg": "#3c3c3c",
                 "border": "#555555",
+                "heading_bg": "#2d2d30",
+                "heading_fg": "#d4d4d4",
+                "heading_active_bg": "#3c3c3c",
                 "comment": "#6a9955",
                 "info": "#75b7ff",
                 "error": "#ff6b6b",
@@ -170,6 +173,9 @@ class EventViewer:
                 "select_fg": "#ffffff",
                 "input_bg": "#ffffff",
                 "border": "#a0a0a0",
+                "heading_bg": "#e0e0e0",
+                "heading_fg": "#202020",
+                "heading_active_bg": "#d5d5d5",
                 "comment": "#008000",
                 "info": "#0067c0",
                 "error": "#c42b1c",
@@ -239,8 +245,8 @@ class EventViewer:
         )
         style.configure(
             "Treeview.Heading",
-            background=fg_color,
-            foreground=input_bg,
+            background=colors["heading_bg"],
+            foreground=colors["heading_fg"],
             font=self.heading_font,
             padding=(8, 5),
             borderwidth=0,
@@ -248,8 +254,14 @@ class EventViewer:
         )
         style.map(
             "Treeview.Heading",
-            background=[("active", fg_color), ("pressed", fg_color)],
-            foreground=[("active", input_bg), ("pressed", input_bg)],
+            background=[
+                ("active", colors["heading_active_bg"]),
+                ("pressed", colors["heading_active_bg"]),
+            ],
+            foreground=[
+                ("active", colors["heading_fg"]),
+                ("pressed", colors["heading_fg"]),
+            ],
             relief=[("active", "flat"), ("pressed", "flat")],
         )
         style.map("Treeview",
